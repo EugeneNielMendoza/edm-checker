@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EDM checker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #eef1f4;
+    --panel: #ffffff;
+    --ink: #16202b;
+    --steel: #5b6b7c;
+    --rule: #d3dae1;
+    --signal: #2b59c3;
+    --signal-ink: #ffffff;
+    --pass: #2e7d4f;
+    --fail: #b3261e;
+    --table: #dfe4ea;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #141a21;
+      --panel: #1c242d;
+      --ink: #e6ebf0;
+      --steel: #95a3b2;
+      --rule: #2f3a46;
+      --signal: #7e9fe8;
+      --signal-ink: #0e1620;
+      --pass: #6cc08f;
+      --fail: #f08a80;
+      --table: #0f141a;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font: 400 16px/1.5 "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(300px, 380px) 1fr;
+    min-height: 100%;
+  }
+  .controls {
+    padding: 40px 32px;
+    border-right: 1px solid var(--rule);
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  h1 { font-size: 28px; line-height: 1.15; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .lede { color: var(--steel); margin: 8px 0 0; max-width: 34ch; }
+
+  .drop {
+    border: 2px dashed var(--rule);
+    border-radius: 10px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .drop:hover, .drop.over { border-color: var(--signal); background: color-mix(in srgb, var(--signal) 7%, transparent); }
+  .drop:focus-visible { outline: 3px solid var(--signal); outline-offset: 3px; }
+  .drop strong { display: block; font-weight: 500; }
+  .drop span { color: var(--steel); font-size: 14px; }
+  .drop input { display: none; }
+
+  label.field { display: grid; gap: 6px; font-size: 14px; font-weight: 500; }
+  label.field small { color: var(--steel); font-weight: 400; }
+  input[type=text] {
+    font: inherit; color: var(--ink); background: var(--paper);
+    border: 1px solid var(--rule); border-radius: 6px; padding: 9px 11px;
+  }
+  input[type=text]:focus-visible { outline: 2px solid var(--signal); outline-offset: 1px; }
+
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+  .steps li {
+    position: relative; padding: 0 0 18px 28px; color: var(--steel); font-size: 15px;
+  }
+  .steps li::before {
+    content: ""; position: absolute; left: 4px; top: 6px; width: 10px; height: 10px;
+    border-radius: 50%; border: 2px solid var(--rule); background: var(--panel);
+  }
+  .steps li:not(:last-child)::after {
+    content: ""; position: absolute; left: 9px; top: 20px; bottom: 2px; width: 2px; background: var(--rule);
+  }
+  .steps li.active { color: var(--ink); }
+  .steps li.active::before { border-color: var(--signal); animation: pulse 1.2s ease-in-out infinite; }
+  .steps li.done { color: var(--ink); }
+  .steps li.done::before { border-color: var(--pass); background: var(--pass); }
+  .steps li.error { color: var(--fail); }
+  .steps li.error::before { border-color: var(--fail); background: var(--fail); }
+  .steps .detail { display: block; font-size: 13px; color: var(--steel); }
+  @keyframes pulse { 50% { transform: scale(1.25); } }
+  @media (prefers-reduced-motion: reduce) { .steps li.active::before { animation: none; } }
+
+  .bar { height: 4px; background: var(--rule); border-radius: 2px; overflow: hidden; margin-top: 6px; max-width: 220px; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--signal); transition: width .4s; }
+
+  .result { display: grid; gap: 12px; }
+  .button {
+    display: inline-block; text-align: center; text-decoration: none; font: inherit; font-weight: 500;
+    background: var(--signal); color: var(--signal-ink); border: 0; border-radius: 6px;
+    padding: 11px 16px; cursor: pointer;
+  }
+  .button.quiet { background: transparent; color: var(--signal); padding: 0; text-align: left; }
+  .button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .message { font-size: 14px; border-left: 3px solid var(--fail); padding: 4px 0 4px 12px; color: var(--ink); }
+  .message.note { border-color: var(--steel); }
+  .failed { font-size: 14px; color: var(--fail); margin: 0; }
+  .hidden { display: none !important; }
+
+  .table {
+    background: var(--table);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 48px 24px; overflow: auto;
+  }
+  .proof {
+    width: 600px; max-width: 100%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(10, 20, 30, .12), 0 18px 40px -12px rgba(10, 20, 30, .28);
+    border-radius: 2px;
+  }
+  .proof iframe { display: block; width: 100%; height: 900px; border: 0; }
+  .empty { color: var(--steel); text-align: center; margin-top: 18vh; max-width: 32ch; }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .controls { border-right: 0; border-bottom: 1px solid var(--rule); padding: 28px 20px; }
+    .table { padding: 24px 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <section class="controls">
+    <div>
+      <h1>Check an EDM in Mailgun</h1>
+      <p class="lede">Drop a Sesimi EDM template zip. It’s rendered with its sample data and sent to Mailgun Email Preview.</p>
+    </div>
+
+    <label class="field">
+      Subject line <small>Optional. Defaults to the file name.</small>
+      <input type="text" id="subject" autocomplete="off">
+    </label>
+
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a template zip to check">
+      <strong>Drop the template zip here</strong>
+      <span>or click to choose a file</span>
+      <input type="file" id="file" accept=".zip,application/zip">
+    </div>
+
+    <ol class="steps hidden" id="steps" aria-live="polite">
+      <li id="s-render">Rendering the template<span class="detail"></span></li>
+      <li id="s-send">Sending to Mailgun<span class="detail"></span></li>
+      <li id="s-clients">Rendering in email clients<span class="detail"></span><div class="bar"><i id="bar"></i></div></li>
+      <li id="s-ready">Results ready<span class="detail"></span></li>
+    </ol>
+
+    <div class="result hidden" id="result"></div>
+    <div id="error" class="message hidden" role="alert"></div>
+    <button class="button quiet hidden" id="again" type="button">Check another template</button>
+  </section>
+
+  <section class="table">
+    <div class="proof hidden" id="proof"><iframe id="frame" title="Rendered email" sandbox="allow-same-origin"></iframe></div>
+    <p class="empty" id="empty">The rendered email appears here once you drop a zip.</p>
+  </section>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const drop = $("drop"), fileInput = $("file");
+  let busy = false;
+
+  function setStep(id, state, detail) {
+    const li = $(id);
+    li.className = state || "";
+    if (detail !== undefined) li.querySelector(".detail").textContent = detail;
+  }
+  function showError(text) {
+    $("error").textContent = text;
+    $("error").classList.remove("hidden");
+    $("again").classList.remove("hidden");
+    busy = false;
+  }
+  function reset() {
+    busy = false;
+    ["s-render", "s-send", "s-clients", "s-ready"].forEach((s) => setStep(s, "", ""));
+    $("bar").style.width = "0";
+    ["steps", "result", "error", "again", "proof"].forEach((id) => $(id).classList.add("hidden"));
+    $("empty").classList.remove("hidden");
+    $("frame").removeAttribute("src");
+    $("result").replaceChildren();
+    fileInput.value = "";
+  }
+
+  drop.addEventListener("click", () => !busy && fileInput.click());
+  drop.addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && !busy) { e.preventDefault(); fileInput.click(); }
+  });
+  drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+  drop.addEventListener("drop", (e) => {
+    e.preventDefault(); drop.classList.remove("over");
+    if (e.dataTransfer.files[0]) start(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener("change", () => fileInput.files[0] && start(fileInput.files[0]));
+  $("again").addEventListener("click", reset);
+
+  async function start(file) {
+    if (busy) return;
+    reset();
+    if (!/\.zip$/i.test(file.name)) return showError("That isn’t a zip. Drop the template zip exported from Sesimi.");
+    busy = true;
+    $("steps").classList.remove("hidden");
+    setStep("s-render", "active", file.name);
+
+    const params = new URLSearchParams({ name: file.name, subject: $("subject").value });
+    let data;
+    try {
+      const res = await fetch("/api/checks?" + params, {
+        method: "POST", headers: { "Content-Type": "application/zip" }, body: file,
+      });
+      data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed.");
+    } catch (err) {
+      setStep("s-render", "error");
+      return showError(err.message);
+    }
+
+    const check = data.checks[0];
+    setStep("s-render", "done", data.checks.length > 1 ? `${data.checks.length} pages rendered` : file.name);
+    setStep("s-send", "done", check.subject);
+    $("frame").src = check.previewUrl;
+    $("proof").classList.remove("hidden");
+    $("empty").classList.add("hidden");
+    if (check.warnings.length) {
+      addNote("Mailgun warnings: " + check.warnings.map((w) => w.message || w.name || w).join("; "));
+    }
+
+    await Promise.all(data.checks.map((c, i) => poll(c, i === 0)));
+    busy = false;
+    $("again").classList.remove("hidden");
+  }
+
+  function addNote(text) {
+    const p = document.createElement("p");
+    p.className = "message note";
+    p.textContent = text;
+    $("result").append(p);
+    $("result").classList.remove("hidden");
+  }
+
+  async function poll(check, drivesSteps) {
+    if (drivesSteps) setStep("s-clients", "active", "Waiting for Mailgun");
+    const started = Date.now();
+    while (Date.now() - started < 15 * 60 * 1000) {
+      await new Promise((r) => setTimeout(r, 5000));
+      let s;
+      try {
+        const res = await fetch("/api/checks/" + encodeURIComponent(check.testId));
+        s = await res.json();
+        if (!res.ok) throw new Error(s.error);
+      } catch (err) {
+        if (drivesSteps) setStep("s-clients", "error");
+        return showError(err.message || "Lost contact with the server while checking progress.");
+      }
+      if (drivesSteps && s.total) {
+        setStep("s-clients", "active", `${s.done} of ${s.total} clients`);
+        $("bar").style.width = Math.round((s.done / s.total) * 100) + "%";
+      }
+      if (s.complete) {
+        if (drivesSteps) {
+          setStep("s-clients", "done", `${s.total} clients`);
+          setStep("s-ready", "done", s.failed.length ? `${s.failed.length} client(s) failed to render` : "All clients rendered");
+        }
+        showResult(check, s);
+        return;
+      }
+    }
+    if (drivesSteps) setStep("s-clients", "error", "Still running after 15 minutes");
+    addNote(`Mailgun is still working on test ${check.testId}. Check it in the Mailgun dashboard.`);
+  }
+
+  function showResult(check, s) {
+    const box = $("result");
+    if (s.shareUrl) {
+      const a = document.createElement("a");
+      a.className = "button"; a.href = s.shareUrl; a.target = "_blank"; a.rel = "noopener";
+      a.textContent = check.page && $("result").querySelectorAll("a.button").length ? `Open results in Mailgun (page ${check.page})` : "Open results in Mailgun";
+      box.prepend(a);
+    } else {
+      addNote(`Results are ready. Find test ${check.testId} in the Mailgun dashboard (a share link couldn’t be created).`);
+    }
+    if (s.failed.length) {
+      const p = document.createElement("p");
+      p.className = "failed";
+      p.textContent = "Failed to render in: " + s.failed.join(", ");
+      box.append(p);
+    }
+    box.classList.remove("hidden");
+  }
+</script>
+</body>
+</html>
