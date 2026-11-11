@@ -4,6 +4,7 @@
   "description": "Upload a Sesimi EDM template zip, render it and send it to Mailgun Email Preview",
   "dependencies": {
     "@faire/mjml-react": "3.4.0",
+    "@myadbox/nebula-template-utils": "0.4.66",
     "@vercel/blob": "2.9.0",
     "adm-zip": "0.5.16",
     "mjml-browser": "4.15.3",
