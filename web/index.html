@@ -388,18 +388,18 @@
   <main class="stage" id="stage">
     <!-- Before a check: big drop zone -->
     <section class="idle" id="idle">
-      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a template zip to check">
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose an EDM template zip or exported email to check">
         <div class="drop-icon" aria-hidden="true">
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M20 15v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/></svg>
         </div>
-        <h1>Drop an EDM template zip</h1>
-        <p>It’s rendered with the template’s sample data, then tested in the email clients you’ve selected.</p>
+        <h1>Drop an EDM template or export</h1>
+        <p>Template zips are rendered with their sample data. Emails exported from Sesimi are used exactly as exported. Then it’s tested in the email clients you’ve selected.</p>
         <span class="btn btn-primary">Browse files</span>
-        <p class="meta" id="drop-meta">ZIP exported from Sesimi</p>
-        <input type="file" id="file" accept=".zip,application/zip" hidden>
+        <p class="meta" id="drop-meta">Template zip, or exported email (zip or HTML)</p>
+        <input type="file" id="file" accept=".zip,.html,.htm,application/zip,text/html" hidden>
       </div>
       <ol class="how" aria-label="How it works">
-        <li><b>1</b>Drop the zip</li>
+        <li><b>1</b>Drop a template or export</li>
         <li><b>2</b>It’s rendered and sent to Mailgun</li>
         <li><b>3</b>Results open when ready</li>
       </ol>
@@ -430,13 +430,13 @@
         <div class="actions">
           <button class="btn btn-secondary hidden" id="again" type="button">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
-            Check another template
+            Check another EDM
           </button>
         </div>
       </div>
 
       <div class="card preview hidden" id="proof">
-        <div class="preview-head"><span>Rendered email</span><span class="muted">Sample data · 600px wide</span></div>
+        <div class="preview-head"><span>Rendered email</span><span class="muted" id="proof-note">Sample data · 600px wide</span></div>
         <div class="preview-body"><iframe id="frame" title="Rendered email" sandbox></iframe></div>
       </div>
     </section>
@@ -531,6 +531,7 @@
     busy = false;
     updateListButtons();
     ["s-render", "s-send", "s-clients", "s-ready"].forEach((s) => setStep(s, "", ""));
+    $("s-render").querySelector(".step-label").textContent = "Render";
     $("bar").style.width = "0";
     ["result", "error", "again", "proof"].forEach((id) => $(id).classList.add("hidden"));
     $("frame").removeAttribute("srcdoc");
@@ -568,20 +569,20 @@
     $("run-sub").textContent = `${$("subject").value.trim() || "Subject: file name"} · ${previewOnly ? "Preview only, not sent to Mailgun" : list ? `${list.name} (${list.clients.length} clients)` : "Mailgun default clients"}`;
     setChip("running", "In progress");
 
-    if (!/\.zip$/i.test(file.name)) return showError("That isn’t a zip. Drop the template zip exported from Sesimi.");
+    if (!/\.(zip|html?)$/i.test(file.name)) return showError("That isn’t a zip or HTML file. Drop a Sesimi template zip, or an email exported from Sesimi.");
     if (maxUploadBytes && file.size > maxUploadBytes) {
       return showError(`That zip is ${(file.size / 1048576).toFixed(1)} MB; the limit here is ${(maxUploadBytes / 1048576).toFixed(1)} MB.`);
     }
     busy = true;
     updateListButtons();
-    setStep("s-render", "active", "Rendering with sample data");
+    setStep("s-render", "active", /\.html?$/i.test(file.name) ? "Reading the exported email" : "Reading the zip");
 
     const params = new URLSearchParams({ name: file.name, subject: $("subject").value, list: listSelect.value });
     if (previewOnly) params.set("preview", "1");
     let data;
     try {
       const res = await fetch("/api/checks?" + params, {
-        method: "POST", headers: { "Content-Type": "application/zip" }, body: file,
+        method: "POST", headers: { "Content-Type": /\.html?$/i.test(file.name) ? "text/html" : "application/zip" }, body: file,
       });
       data = await res.json().catch(() => ({ error: res.status === 413 ? "That zip is too large to upload here." : res.status === 504 ? "The server took too long. Try again." : `Upload failed (error ${res.status}).` }));
       if (!res.ok) throw new Error(data.error || "Upload failed.");
@@ -592,9 +593,13 @@
 
     const check = data.checks[0];
     pageCount = data.checks.length;
+    const isExport = data.source === "export";
+    if (isExport) $("s-render").querySelector(".step-label").textContent = "Exported email";
+    $("proof-note").textContent = isExport ? "As exported · 600px wide" : "Sample data · 600px wide";
+    const renderDetail = isExport ? "Used as-is" : pageCount > 1 ? `${pageCount} pages` : "Done";
 
     if (data.preview) {
-      setStep("s-render", "done", pageCount > 1 ? `${pageCount} pages` : "Done");
+      setStep("s-render", "done", renderDetail);
       setStep("s-send", "skipped", "Skipped (preview only)");
       setStep("s-clients", "skipped", "Skipped");
       setStep("s-ready", "done", "Preview ready");
@@ -603,13 +608,13 @@
       setChip("done", "Preview");
       $("frame").srcdoc = check.html;
       $("proof").classList.remove("hidden");
-      addNote(`Rendered only. Nothing was sent to Mailgun.${pageCount > 1 ? ` Showing page ${check.page} of ${pageCount}.` : ""} Turn off “Preview only” to test it in email clients.`);
+      addNote(`${isExport ? "Exported email shown as-is." : "Rendered only."} Nothing was sent to Mailgun.${pageCount > 1 ? ` Showing page ${check.page} of ${pageCount}.` : ""} Turn off “Preview only” to test it in email clients.`);
       busy = false;
       updateListButtons();
       $("again").classList.remove("hidden");
       return;
     }
-    setStep("s-render", "done", data.checks.length > 1 ? `${data.checks.length} pages` : "Done");
+    setStep("s-render", "done", renderDetail);
     setStep("s-send", "done", check.subject);
     $("frame").srcdoc = check.html;
     $("proof").classList.remove("hidden");
@@ -861,7 +866,7 @@
   // ---------- Start up ----------
   fetch("/api/config").then((r) => r.json()).then((c) => {
     maxUploadBytes = c.maxUploadBytes || 0;
-    if (maxUploadBytes) $("drop-meta").textContent = `ZIP exported from Sesimi · up to ${(maxUploadBytes / 1048576).toFixed(maxUploadBytes < 10485760 ? 1 : 0)} MB`;
+    if (maxUploadBytes) $("drop-meta").textContent = `Template zip, or exported email (zip or HTML) · up to ${(maxUploadBytes / 1048576).toFixed(maxUploadBytes < 10485760 ? 1 : 0)} MB`;
   }).catch(() => {});
   loadLists();
 </script>

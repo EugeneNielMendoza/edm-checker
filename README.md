@@ -1,8 +1,17 @@
 # EDM checker
 
-A small internal web page: drop a Sesimi EDM template zip, and it is rendered
-to email HTML (with the zip's sample data) and sent to Mailgun Email Preview.
-The page shows the rendered email, progress, and a link to the results in Mailgun.
+A small internal web page: drop a Sesimi EDM and it's sent to Mailgun Email Preview.
+The page shows the email, progress, and a link to the results in Mailgun.
+
+It accepts two kinds of file:
+
+- **Template zip** (has `pages/<id>/index.js`): the template code is run in a sandbox and
+  rendered with the zip's sample data (`data/values.json`).
+- **Exported email** (an `.html` file, or a zip exported from Sesimi with an `index.html`
+  and no `pages/`): already the finished email, so it's sent exactly as exported. No code
+  is run. Images must be hosted (e.g. Cloudinary links); bundled fonts are ignored.
+
+Turn on **Preview only** to render/show the email without sending it to Mailgun (no credits used).
 
 ## Run it
 
