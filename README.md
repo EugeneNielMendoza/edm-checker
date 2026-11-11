@@ -15,7 +15,7 @@ MAILGUN_API_KEY=your-key APP_PASSWORD=choose-one npm start
 
 Then open http://localhost:3000.
 
-Or keep settings in a `.env` file (ignored by git) and run `node --env-file=.env server.js`.
+Or keep settings in a `.env` file (ignored by git) and run `node --env-file=.env local-server.js`.
 
 With Docker:
 
@@ -26,7 +26,9 @@ docker run -p 3000:3000 -v edm-data:/app/data -e MAILGUN_API_KEY=your-key -e APP
 
 ## Deploy on Vercel
 
-The same code runs on Vercel (`api/index.mjs` + `vercel.json`); `server.js` is only for local/Docker.
+The same code (`lib/app.js`) runs on Vercel via `api/index.mjs` + `vercel.json`; `local-server.js` is only for
+local/Docker. Don't add `app.js`, `index.js` or `server.js` at the project root: Vercel auto-detects those
+names as the server entry and ignores `api/`.
 
 1. Import the GitHub repo in Vercel (Framework preset: **Other**, no build command).
 2. **Storage → Create → Blob**, choose **Private** access, and connect it to the project.

@@ -1,12 +1,13 @@
 /**
  * Runs the EDM checker as a normal Node server (locally or in Docker).
- * All the logic lives in app.js; on Vercel, api/index.mjs uses it instead of this file.
+ * All the logic lives in lib/app.js; on Vercel, api/index.mjs uses it instead of this file.
+ * (Not named server.js: Vercel would auto-detect that name as its entry point.)
  *
- *   node --env-file=.env server.js      (PORT defaults to 3000)
+ *   node --env-file=.env local-server.js      (PORT defaults to 3000)
  */
 const http = require("http");
 const { Readable } = require("stream");
-const app = require("./app");
+const app = require("./lib/app");
 
 const PORT = Number(process.env.PORT || 3000);
 

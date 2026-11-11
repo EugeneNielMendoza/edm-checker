@@ -1,7 +1,7 @@
 /**
  * Render an unzipped Sesimi EDM template bundle to email HTML.
  *
- * Runs as a child process started by server.js with Node's permission model
+ * Runs as a child process started by lib/app.js with Node's permission model
  * (--permission): it may only READ the template folder and this app's own
  * files, and cannot write files or start other processes. The template is
  * code from a zip, so it is treated as untrusted.

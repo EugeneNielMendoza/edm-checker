@@ -12,7 +12,7 @@
     "zod": "3.23.8"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node local-server.js"
   },
   "engines": {
     "node": "22.x"
