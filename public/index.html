@@ -79,7 +79,39 @@
     font: inherit; color: var(--ink); background: var(--paper);
     border: 1px solid var(--rule); border-radius: 6px; padding: 9px 11px;
   }
-  input[type=text]:focus-visible { outline: 2px solid var(--signal); outline-offset: 1px; }
+  input[type=text]:focus-visible, select:focus-visible { outline: 2px solid var(--signal); outline-offset: 1px; }
+  select {
+    font: inherit; color: var(--ink); background: var(--paper);
+    border: 1px solid var(--rule); border-radius: 6px; padding: 9px 11px; width: 100%;
+  }
+  .list-actions { display: flex; gap: 16px; font-size: 14px; }
+  .linkish { font: inherit; background: none; border: 0; padding: 0; color: var(--signal); cursor: pointer; }
+  .linkish:disabled { color: var(--steel); cursor: default; }
+  .linkish.danger { color: var(--fail); }
+  .linkish:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+  dialog.editor {
+    width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 48px);
+    padding: 0; border: 1px solid var(--rule); border-radius: 10px;
+    background: var(--panel); color: var(--ink);
+  }
+  dialog.editor::backdrop { background: rgba(10, 16, 24, .45); }
+  .editor form { display: flex; flex-direction: column; max-height: calc(100vh - 48px); }
+  .editor header, .editor footer { padding: 20px 24px; display: grid; gap: 14px; }
+  .editor header { border-bottom: 1px solid var(--rule); }
+  .editor footer { border-top: 1px solid var(--rule); display: flex; align-items: center; gap: 16px; }
+  .editor footer .spacer { flex: 1; }
+  .editor h2 { margin: 0; font-size: 20px; }
+  .editor .picker { overflow: auto; padding: 8px 24px 16px; flex: 1; min-height: 200px; }
+  .editor fieldset { border: 0; margin: 0; padding: 12px 0 0; }
+  .editor legend { font-weight: 700; font-size: 14px; padding: 0; display: flex; gap: 12px; align-items: baseline; width: 100%; }
+  .editor legend .linkish { font-weight: 400; font-size: 13px; }
+  .editor .opt { display: flex; gap: 10px; align-items: baseline; padding: 4px 0; font-size: 14px; cursor: pointer; }
+  .editor .opt small { color: var(--steel); }
+  .editor .opt input { accent-color: var(--signal); }
+  .editor .count { color: var(--steel); font-size: 14px; }
+  .editor .message { margin: 0; }
+  .button.secondary { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
 
   .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
   .steps li {
@@ -152,6 +184,18 @@
       <input type="text" id="subject" autocomplete="off">
     </label>
 
+    <div class="field-group">
+      <label class="field" for="list">
+        Email clients <small>Shared lists — everyone using this page sees the same ones.</small>
+      </label>
+      <select id="list" style="margin-top:6px"></select>
+      <div class="list-actions" style="margin-top:8px">
+        <button type="button" class="linkish" id="list-new">New list</button>
+        <button type="button" class="linkish" id="list-edit">Edit</button>
+        <button type="button" class="linkish danger" id="list-delete">Delete</button>
+      </div>
+    </div>
+
     <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a template zip to check">
       <strong>Drop the template zip here</strong>
       <span>or click to choose a file</span>
@@ -176,6 +220,30 @@
   </section>
 </div>
 
+<dialog class="editor" id="editor" aria-labelledby="editor-title">
+  <form method="dialog" id="editor-form">
+    <header>
+      <h2 id="editor-title">New client list</h2>
+      <label class="field">
+        List name
+        <input type="text" id="editor-name" maxlength="60" autocomplete="off" required>
+      </label>
+      <label class="field">
+        Find a client
+        <input type="text" id="editor-search" placeholder="e.g. Outlook, iPhone, dark" autocomplete="off">
+      </label>
+    </header>
+    <div class="picker" id="editor-picker"><p class="count">Loading clients from Mailgun…</p></div>
+    <footer>
+      <span class="count" id="editor-count">0 selected</span>
+      <span class="spacer"></span>
+      <button type="button" class="button secondary" id="editor-cancel">Cancel</button>
+      <button type="submit" class="button" id="editor-save">Save list</button>
+    </footer>
+    <p class="message hidden" id="editor-error" role="alert" style="margin:0 24px 16px"></p>
+  </form>
+</dialog>
+
 <script>
   const $ = (id) => document.getElementById(id);
   const drop = $("drop"), fileInput = $("file");
@@ -191,9 +259,11 @@
     $("error").classList.remove("hidden");
     $("again").classList.remove("hidden");
     busy = false;
+    updateListButtons();
   }
   function reset() {
     busy = false;
+    updateListButtons();
     ["s-render", "s-send", "s-clients", "s-ready"].forEach((s) => setStep(s, "", ""));
     $("bar").style.width = "0";
     ["steps", "result", "error", "again", "proof"].forEach((id) => $(id).classList.add("hidden"));
@@ -221,10 +291,11 @@
     reset();
     if (!/\.zip$/i.test(file.name)) return showError("That isn’t a zip. Drop the template zip exported from Sesimi.");
     busy = true;
+    updateListButtons();
     $("steps").classList.remove("hidden");
     setStep("s-render", "active", file.name);
 
-    const params = new URLSearchParams({ name: file.name, subject: $("subject").value });
+    const params = new URLSearchParams({ name: file.name, subject: $("subject").value, list: listSelect.value });
     let data;
     try {
       const res = await fetch("/api/checks?" + params, {
@@ -249,6 +320,7 @@
 
     await Promise.all(data.checks.map((c, i) => poll(c, i === 0)));
     busy = false;
+    updateListButtons();
     $("again").classList.remove("hidden");
   }
 
@@ -319,6 +391,174 @@
     }
     box.classList.remove("hidden");
   }
+
+  // ---------- Shared client lists ----------
+  const listSelect = $("list");
+  let lists = [];
+  let allClients = null; // loaded from Mailgun the first time the editor opens
+  let editingId = null;  // null = creating a new list
+
+  const remember = {
+    get() { try { return localStorage.getItem("edm-list") || ""; } catch { return ""; } },
+    set(v) { try { localStorage.setItem("edm-list", v); } catch {} },
+  };
+
+  async function api(method, url, body) {
+    const res = await fetch(url, {
+      method, headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Something went wrong.");
+    return data;
+  }
+
+  async function loadLists(selectId) {
+    try {
+      lists = (await api("GET", "/api/lists")).lists;
+    } catch (err) {
+      lists = [];
+      showError("Couldn’t load the client lists: " + err.message);
+    }
+    const want = selectId || listSelect.value || remember.get();
+    listSelect.replaceChildren();
+    for (const l of lists) listSelect.append(new Option(`${l.name} (${l.clients.length})`, l.id));
+    listSelect.append(new Option("Mailgun default clients", ""));
+    listSelect.value = lists.some((l) => l.id === want) ? want : (lists[0] ? lists[0].id : "");
+    remember.set(listSelect.value);
+    updateListButtons();
+  }
+
+  function updateListButtons() {
+    const hasList = !!listSelect.value;
+    $("list-edit").disabled = busy || !hasList;
+    $("list-delete").disabled = busy || !hasList;
+    $("list-new").disabled = busy;
+    listSelect.disabled = busy;
+  }
+  listSelect.addEventListener("change", () => { remember.set(listSelect.value); updateListButtons(); });
+
+  $("list-delete").addEventListener("click", async () => {
+    const list = lists.find((l) => l.id === listSelect.value);
+    if (!list) return;
+    if (!confirm(`Delete the list “${list.name}” for everyone? This can’t be undone.`)) return;
+    try {
+      await api("DELETE", "/api/lists/" + list.id);
+      await loadLists("");
+    } catch (err) {
+      alert(err.message);
+      loadLists();
+    }
+  });
+
+  $("list-new").addEventListener("click", () => openEditor(null));
+  $("list-edit").addEventListener("click", () => openEditor(lists.find((l) => l.id === listSelect.value)));
+  $("editor-cancel").addEventListener("click", () => $("editor").close());
+  $("editor-search").addEventListener("input", filterPicker);
+  $("editor-picker").addEventListener("change", updateCount);
+
+  async function openEditor(list) {
+    editingId = list ? list.id : null;
+    $("editor-title").textContent = list ? `Edit “${list.name}”` : "New client list";
+    $("editor-name").value = list ? list.name : "";
+    $("editor-search").value = "";
+    $("editor-error").classList.add("hidden");
+    $("editor").showModal();
+    $("editor-name").focus();
+    try {
+      if (!allClients) allClients = (await api("GET", "/api/clients")).clients;
+    } catch (err) {
+      $("editor-picker").innerHTML = "";
+      return editorError("Couldn’t load clients from Mailgun: " + err.message);
+    }
+    buildPicker(new Set(list ? list.clients : []));
+  }
+
+  function buildPicker(selected) {
+    const picker = $("editor-picker");
+    picker.replaceChildren();
+    const groups = new Map();
+    for (const c of allClients) {
+      if (!groups.has(c.category)) groups.set(c.category, []);
+      groups.get(c.category).push(c);
+    }
+    for (const [category, clients] of groups) {
+      const fs = document.createElement("fieldset");
+      const legend = document.createElement("legend");
+      legend.append(category);
+      const all = document.createElement("button");
+      all.type = "button"; all.className = "linkish"; all.textContent = "Select all";
+      all.addEventListener("click", () => {
+        const boxes = [...fs.querySelectorAll(".opt:not(.hidden) input")];
+        const turnOn = boxes.some((b) => !b.checked);
+        boxes.forEach((b) => (b.checked = turnOn));
+        updateCount();
+      });
+      legend.append(all);
+      fs.append(legend);
+      for (const c of clients) {
+        const label = document.createElement("label");
+        label.className = "opt";
+        label.dataset.search = `${c.client} ${c.os} ${c.category} ${c.id}`.toLowerCase();
+        const box = document.createElement("input");
+        box.type = "checkbox"; box.value = c.id; box.checked = selected.has(c.id);
+        const name = document.createElement("span");
+        name.textContent = c.client;
+        const os = document.createElement("small");
+        os.textContent = c.os;
+        label.append(box, name, os);
+        fs.append(label);
+      }
+      picker.append(fs);
+    }
+    updateCount();
+  }
+
+  function filterPicker() {
+    const words = $("editor-search").value.toLowerCase().split(/\s+/).filter(Boolean);
+    for (const fs of $("editor-picker").querySelectorAll("fieldset")) {
+      let shown = 0;
+      for (const opt of fs.querySelectorAll(".opt")) {
+        const match = words.every((w) => opt.dataset.search.includes(w));
+        opt.classList.toggle("hidden", !match);
+        if (match) shown++;
+      }
+      fs.classList.toggle("hidden", shown === 0);
+    }
+  }
+
+  function updateCount() {
+    const n = $("editor-picker").querySelectorAll("input:checked").length;
+    $("editor-count").textContent = `${n} selected`;
+  }
+
+  function editorError(text) {
+    $("editor-error").textContent = text;
+    $("editor-error").classList.remove("hidden");
+  }
+
+  $("editor-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const body = {
+      name: $("editor-name").value.trim(),
+      clients: [...$("editor-picker").querySelectorAll("input:checked")].map((b) => b.value),
+    };
+    if (!body.name) return editorError("Give the list a name.");
+    if (!body.clients.length) return editorError("Pick at least one email client.");
+    $("editor-save").disabled = true;
+    try {
+      const { list } = editingId
+        ? await api("PUT", "/api/lists/" + editingId, body)
+        : await api("POST", "/api/lists", body);
+      $("editor").close();
+      await loadLists(list.id);
+    } catch (err) {
+      editorError(err.message);
+    } finally {
+      $("editor-save").disabled = false;
+    }
+  });
+
+  loadLists();
 </script>
 </body>
 </html>

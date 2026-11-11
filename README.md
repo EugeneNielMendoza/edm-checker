@@ -19,7 +19,7 @@ With Docker:
 
 ```
 docker build -t edm-checker .
-docker run -p 3000:3000 -e MAILGUN_API_KEY=your-key -e APP_PASSWORD=choose-one edm-checker
+docker run -p 3000:3000 -v edm-data:/app/data -e MAILGUN_API_KEY=your-key -e APP_PASSWORD=choose-one edm-checker
 ```
 
 ## Settings (environment variables)
@@ -30,13 +30,16 @@ docker run -p 3000:3000 -e MAILGUN_API_KEY=your-key -e APP_PASSWORD=choose-one e
 | MAILGUN_REGION | no | `us` (default) or `eu`. |
 | APP_PASSWORD | strongly recommended | Visitors must enter it (any username). |
 | PORT | no | Default 3000. |
-| PREVIEW_CLIENTS | no | Comma-separated Mailgun client IDs to test on (e.g. the APAC CHECKER list). Empty = Mailgun's default clients. |
+| DATA_DIR | no | Where shared client lists are saved (`client-lists.json`). Default `./data`. In Docker, mount a volume at `/app/data` so lists survive redeploys. |
+| PREVIEW_CLIENTS | no | Comma-separated client IDs for the first client list, used only when no lists exist yet. |
+| PREVIEW_CLIENTS_NAME | no | Name of that first list (e.g. `APAC CHECKER`). Default `Default`. |
 
 ## Security notes
 
 - Template zips contain code. The server runs it in a separate Node process with
-  Node's permission model: it can only read the template and the app's files,
-  can't write files and can't start other programs, with a 30-second limit.
+  Node's permission model: it can only read the template, the renderer script and
+  `node_modules` (not `.env` or the saved lists), can't write files and can't start
+  other programs, with a 30-second limit. It can still make network requests.
   Treat that as a safety net, not a guarantee: host this only where Sesimi
   staff can reach it (VPN / internal network / SSO proxy), and set APP_PASSWORD.
 - Uploads are limited to 20 MB (50 MB unpacked); rendered previews are kept in
@@ -52,8 +55,8 @@ docker run -p 3000:3000 -e MAILGUN_API_KEY=your-key -e APP_PASSWORD=choose-one e
 3. Share links: `POST /v1/preview/sharing` with `{ "test_id": ... }` only turns sharing on
    (it returns `"record created"`); `GET /v1/preview/sharing/{test_id}` returns the public
    `url` (expires after about 90 days).
-4. Mailgun saved profiles (e.g. "APAC CHECKER") aren't available through the API, so
-   `PREVIEW_CLIENTS` holds a copy of the profile's client list.
+4. Mailgun saved profiles (e.g. "APAC CHECKER") aren't available through the API, so the app
+   keeps its own shared client lists, which anyone using the page can create, edit or delete.
 
 The rendering reproduces what the template code produces; compare one result
 with a real export from the Sesimi app to confirm they match.
