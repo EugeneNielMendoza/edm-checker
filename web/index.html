@@ -156,6 +156,25 @@
   .btn-danger { color: var(--fail); }
   .toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
 
+  /* ---------- Preview-only switch ---------- */
+  .switch { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+  .switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .switch .track {
+    flex: none; position: relative; width: 38px; height: 22px; margin-top: 1px; border-radius: 999px;
+    background: var(--surface-2); border: 1px solid var(--line); transition: background .15s, border-color .15s;
+  }
+  .switch .track::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--muted); transition: transform .15s, background .15s;
+  }
+  .switch input:checked + .track { background: var(--brand); border-color: var(--brand); }
+  .switch input:checked + .track::after { transform: translateX(16px); background: var(--brand-ink); }
+  .switch input:focus-visible + .track { outline: 2px solid var(--brand); outline-offset: 2px; }
+  .switch input:disabled + .track { opacity: .5; }
+  .switch .text { display: grid; gap: 2px; }
+  .switch .text b { font-size: 14px; font-weight: 600; }
+  .is-dimmed { opacity: .45; }
+
   /* ---------- Idle: drop zone ---------- */
   .idle { flex: 1; display: grid; align-content: center; justify-items: center; gap: 28px; }
   .drop {
@@ -215,6 +234,8 @@
   .step[data-state="done"]::before { border-color: var(--done); background: var(--done) var(--done-check) center / 11px no-repeat; }
   .step[data-state="done"]::after { background: var(--done); }
   .step[data-state="error"]::before { border-color: var(--fail); background: var(--fail); }
+  .step[data-state="skipped"]::before { border-style: dashed; }
+  .step[data-state="skipped"] .step-label { color: var(--muted); font-weight: 500; text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--muted) 60%, transparent); }
   .step[data-state="error"] .step-label { color: var(--fail); }
   .step:not([data-state]) .step-label { color: var(--muted); font-weight: 500; }
   @keyframes pulse { 50% { opacity: .55; } }
@@ -329,6 +350,17 @@
     </div>
 
     <div class="group">
+      <label class="switch" for="preview-only">
+        <input type="checkbox" id="preview-only">
+        <span class="track" aria-hidden="true"></span>
+        <span class="text">
+          <b>Preview only</b>
+          <span class="hint">Render the email without sending it to Mailgun. Uses no preview credits.</span>
+        </span>
+      </label>
+    </div>
+
+    <div class="group" id="clients-group">
       <div class="label-row">
         <label class="label" for="list">Email clients</label>
         <span class="badge hidden" id="list-count"></span>
@@ -437,7 +469,7 @@
 
 <script>
   const $ = (id) => document.getElementById(id);
-  const drop = $("drop"), fileInput = $("file"), listSelect = $("list");
+  const drop = $("drop"), fileInput = $("file"), listSelect = $("list"), previewToggle = $("preview-only");
   let busy = false;
   let lists = [];
   let allClients = null;   // all Mailgun clients, loaded once
@@ -532,7 +564,8 @@
     const list = lists.find((l) => l.id === listSelect.value);
     $("run-eyebrow").textContent = "Checking";
     $("run-title").textContent = file.name;
-    $("run-sub").textContent = `${$("subject").value.trim() || "Subject: file name"} · ${list ? `${list.name} (${list.clients.length} clients)` : "Mailgun default clients"}`;
+    const previewOnly = previewToggle.checked;
+    $("run-sub").textContent = `${$("subject").value.trim() || "Subject: file name"} · ${previewOnly ? "Preview only, not sent to Mailgun" : list ? `${list.name} (${list.clients.length} clients)` : "Mailgun default clients"}`;
     setChip("running", "In progress");
 
     if (!/\.zip$/i.test(file.name)) return showError("That isn’t a zip. Drop the template zip exported from Sesimi.");
@@ -544,6 +577,7 @@
     setStep("s-render", "active", "Rendering with sample data");
 
     const params = new URLSearchParams({ name: file.name, subject: $("subject").value, list: listSelect.value });
+    if (previewOnly) params.set("preview", "1");
     let data;
     try {
       const res = await fetch("/api/checks?" + params, {
@@ -558,6 +592,23 @@
 
     const check = data.checks[0];
     pageCount = data.checks.length;
+
+    if (data.preview) {
+      setStep("s-render", "done", pageCount > 1 ? `${pageCount} pages` : "Done");
+      setStep("s-send", "skipped", "Skipped (preview only)");
+      setStep("s-clients", "skipped", "Skipped");
+      setStep("s-ready", "done", "Preview ready");
+      $("bar").style.width = "100%";
+      $("run-eyebrow").textContent = "Preview ready";
+      setChip("done", "Preview");
+      $("frame").srcdoc = check.html;
+      $("proof").classList.remove("hidden");
+      addNote(`Rendered only. Nothing was sent to Mailgun.${pageCount > 1 ? ` Showing page ${check.page} of ${pageCount}.` : ""} Turn off “Preview only” to test it in email clients.`);
+      busy = false;
+      updateListButtons();
+      $("again").classList.remove("hidden");
+      return;
+    }
     setStep("s-render", "done", data.checks.length > 1 ? `${data.checks.length} pages` : "Done");
     setStep("s-send", "done", check.subject);
     $("frame").srcdoc = check.html;
@@ -684,6 +735,8 @@
     $("list-new").disabled = busy;
     listSelect.disabled = busy;
     $("subject").disabled = busy;
+    previewToggle.disabled = busy;
+    $("clients-group").classList.toggle("is-dimmed", previewToggle.checked);
   }
   listSelect.addEventListener("change", () => { remember.set(listSelect.value); updateListButtons(); describeList(); });
 
@@ -796,6 +849,13 @@
     } finally {
       $("editor-save").disabled = false;
     }
+  });
+
+  // Preview-only switch (remembered per browser).
+  try { previewToggle.checked = localStorage.getItem("edm-preview-only") === "1"; } catch {}
+  previewToggle.addEventListener("change", () => {
+    try { localStorage.setItem("edm-preview-only", previewToggle.checked ? "1" : "0"); } catch {}
+    updateListButtons();
   });
 
   // ---------- Start up ----------
