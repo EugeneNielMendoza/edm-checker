@@ -44,14 +44,16 @@ docker run -p 3000:3000 -e MAILGUN_API_KEY=your-key -e APP_PASSWORD=choose-one e
   is deleted after each upload.
 - Client templates are sent to Mailgun, the same as checking them by hand.
 
-## Assumptions to verify on first real run
+## Mailgun API notes (confirmed against a live account)
 
-These Mailgun details couldn't be confirmed from the public docs; if one is
-wrong, the page shows Mailgun's error message:
-
-1. `POST /v2/preview/tests` accepts the v1 fields (`subject`, `html`, `content_checking`).
+1. `POST /v2/preview/tests` accepts `subject`, `html`, `content_checking` and an optional
+   `clients` array of client IDs (list them with `GET /v1/preview/tests/clients`).
 2. Each client in `GET /v1/preview/tests/{id}/results` has a `status` that becomes `Complete`.
-3. `POST /v1/preview/sharing` takes `{ "test_id": ... }` and returns a `url`.
+3. Share links: `POST /v1/preview/sharing` with `{ "test_id": ... }` only turns sharing on
+   (it returns `"record created"`); `GET /v1/preview/sharing/{test_id}` returns the public
+   `url` (expires after about 90 days).
+4. Mailgun saved profiles (e.g. "APAC CHECKER") aren't available through the API, so
+   `PREVIEW_CLIENTS` holds a copy of the profile's client list.
 
 The rendering reproduces what the template code produces; compare one result
 with a real export from the Sesimi app to confirm they match.

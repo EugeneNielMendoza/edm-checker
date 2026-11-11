@@ -298,6 +298,16 @@
       a.className = "button"; a.href = s.shareUrl; a.target = "_blank"; a.rel = "noopener";
       a.textContent = check.page && $("result").querySelectorAll("a.button").length ? `Open results in Mailgun (page ${check.page})` : "Open results in Mailgun";
       box.prepend(a);
+      // Open the results automatically. Browsers block this unless pop-ups are allowed for this site.
+      // (No "noopener" feature: with it, window.open returns null even on success.)
+      const opened = window.open(s.shareUrl, "_blank");
+      if (opened) opened.opener = null;
+      else if (!box.querySelector(".popup-note")) {
+        const note = document.createElement("p");
+        note.className = "popup-note";
+        note.textContent = "Tip: allow pop-ups for this page (icon at the right of the address bar) and results will open automatically next time.";
+        box.append(note);
+      }
     } else {
       addNote(`Results are ready. Find test ${check.testId} in the Mailgun dashboard (a share link couldn’t be created).`);
     }

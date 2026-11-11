@@ -108,9 +108,17 @@ async function getProgress(testId) {
 }
 
 async function getShareUrl(testId) {
-  // ASSUMPTION: the sharing endpoint takes { test_id }.
-  const result = await mailgun("POST", "/v1/preview/sharing", { test_id: testId });
-  return result.url || result.share_url || null;
+  // POST turns sharing on (it only returns "record created"); GET returns the public url.
+  const share = () => mailgun("GET", `/v1/preview/sharing/${encodeURIComponent(testId)}`);
+  try {
+    const existing = await share();
+    if (existing.url) return existing.url;
+  } catch {
+    // No share record yet; create one below.
+  }
+  await mailgun("POST", "/v1/preview/sharing", { test_id: testId });
+  const result = await share();
+  return result.url || null;
 }
 
 // ---------- Rendering ----------
