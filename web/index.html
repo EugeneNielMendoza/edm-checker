@@ -3,221 +3,407 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EDM checker</title>
+<title>EDM Checker · Sesimi</title>
+<meta name="theme-color" content="#002a2e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* ---------- Design tokens: Sesimi brand ----------
+     Brand colours (from the Sesimi style guide):
+       midnight teal #002a2e · cyan #7af1ff · soft pink #f9cade · electric lime #d1ff3b
+       flash purple #544ae5 · blood orange #f74c07 · white · black */
   :root {
-    --paper: #eef1f4;
-    --panel: #ffffff;
-    --ink: #16202b;
-    --steel: #5b6b7c;
-    --rule: #d3dae1;
-    --signal: #2b59c3;
-    --signal-ink: #ffffff;
-    --pass: #2e7d4f;
-    --fail: #b3261e;
-    --table: #dfe4ea;
+    --teal: #002a2e;
+    --cyan: #7af1ff;
+    --pink: #f9cade;
+    --lime: #d1ff3b;
+    --orange: #f74c07;
+    --font: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    /* Light mode: white surfaces, teal ink and buttons */
+    --brand: var(--teal);
+    --brand-strong: #00454b;
+    --brand-ink: #ffffff;
+    --brand-soft: color-mix(in srgb, var(--teal) 8%, transparent);
+    --bg: #f2f6f6;
+    --surface: #ffffff;
+    --surface-2: #eaf1f1;
+    --ink: var(--teal);
+    --muted: #4c6a6d;
+    --line: #d6e2e3;
+    --done: var(--teal);
+    --done-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d1ff3b' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+    --pass: #0d6b4f;
+    --fail: #c93d00;
+    --warn: #c93d00;
+    --chip-run-bg: color-mix(in srgb, var(--cyan) 45%, transparent);
+    --chip-run-ink: var(--teal);
+    --chip-done-bg: var(--lime);
+    --chip-done-ink: var(--teal);
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(0, 42, 46, .06), 0 10px 30px -14px rgba(0, 42, 46, .25);
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
-    :root {
-      --paper: #141a21;
-      --panel: #1c242d;
-      --ink: #e6ebf0;
-      --steel: #95a3b2;
-      --rule: #2f3a46;
-      --signal: #7e9fe8;
-      --signal-ink: #0e1620;
-      --pass: #6cc08f;
-      --fail: #f08a80;
-      --table: #0f141a;
+    :root:not([data-theme="light"]) {
+      --brand: var(--lime); --brand-strong: #e2ff7a; --brand-ink: var(--teal);
+      --brand-soft: color-mix(in srgb, var(--lime) 14%, transparent);
+      --bg: #060f11; --surface: #0c1a1d; --surface-2: #122427; --ink: #ffffff; --muted: #94adb0; --line: #1c3236;
+      --done: var(--lime);
+      --done-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23002a2e' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+      --topbar: #0a1719;
+      --pass: var(--lime); --fail: #ff7a45; --warn: #ff7a45;
+      --chip-run-bg: color-mix(in srgb, var(--cyan) 18%, transparent); --chip-run-ink: var(--cyan);
+      --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 14px 34px -16px rgba(0, 0, 0, .7);
       color-scheme: dark;
     }
   }
+  :root[data-theme="dark"] {
+    --brand: var(--lime); --brand-strong: #e2ff7a; --brand-ink: var(--teal);
+    --brand-soft: color-mix(in srgb, var(--lime) 14%, transparent);
+    --bg: #060f11; --surface: #0c1a1d; --surface-2: #122427; --ink: #ffffff; --muted: #94adb0; --line: #1c3236;
+    --done: var(--lime);
+    --done-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23002a2e' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+    --topbar: #0a1719;
+    --pass: var(--lime); --fail: #ff7a45; --warn: #ff7a45;
+    --chip-run-bg: color-mix(in srgb, var(--cyan) 18%, transparent); --chip-run-ink: var(--cyan);
+    --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 14px 34px -16px rgba(0, 0, 0, .7);
+    color-scheme: dark;
+  }
+
+  /* ---------- Base ---------- */
   * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; }
+  html, body { margin: 0; min-height: 100%; }
   body {
-    background: var(--paper);
-    color: var(--ink);
-    font: 400 16px/1.5 "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--ink);
+    font: 400 15px/1.5 var(--font);
+    -webkit-font-smoothing: antialiased;
+    display: grid; grid-template-rows: auto 1fr; min-height: 100vh;
   }
-  .layout {
-    display: grid;
-    grid-template-columns: minmax(300px, 380px) 1fr;
-    min-height: 100%;
-  }
-  .controls {
-    padding: 40px 32px;
-    border-right: 1px solid var(--rule);
-    background: var(--panel);
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
-  }
-  h1 { font-size: 28px; line-height: 1.15; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
-  .lede { color: var(--steel); margin: 8px 0 0; max-width: 34ch; }
-
-  .drop {
-    border: 2px dashed var(--rule);
-    border-radius: 10px;
-    padding: 28px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color .15s, background .15s;
-  }
-  .drop:hover, .drop.over { border-color: var(--signal); background: color-mix(in srgb, var(--signal) 7%, transparent); }
-  .drop:focus-visible { outline: 3px solid var(--signal); outline-offset: 3px; }
-  .drop strong { display: block; font-weight: 500; }
-  .drop span { color: var(--steel); font-size: 14px; }
-  .drop input { display: none; }
-
-  label.field { display: grid; gap: 6px; font-size: 14px; font-weight: 500; }
-  label.field small { color: var(--steel); font-weight: 400; }
-  input[type=text] {
-    font: inherit; color: var(--ink); background: var(--paper);
-    border: 1px solid var(--rule); border-radius: 6px; padding: 9px 11px;
-  }
-  input[type=text]:focus-visible, select:focus-visible { outline: 2px solid var(--signal); outline-offset: 1px; }
-  select {
-    font: inherit; color: var(--ink); background: var(--paper);
-    border: 1px solid var(--rule); border-radius: 6px; padding: 9px 11px; width: 100%;
-  }
-  .list-actions { display: flex; gap: 16px; font-size: 14px; }
-  .linkish { font: inherit; background: none; border: 0; padding: 0; color: var(--signal); cursor: pointer; }
-  .linkish:disabled { color: var(--steel); cursor: default; }
-  .linkish.danger { color: var(--fail); }
-  .linkish:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
-
-  dialog.editor {
-    width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 48px);
-    padding: 0; border: 1px solid var(--rule); border-radius: 10px;
-    background: var(--panel); color: var(--ink);
-  }
-  dialog.editor::backdrop { background: rgba(10, 16, 24, .45); }
-  .editor form { display: flex; flex-direction: column; max-height: calc(100vh - 48px); }
-  .editor header, .editor footer { padding: 20px 24px; display: grid; gap: 14px; }
-  .editor header { border-bottom: 1px solid var(--rule); }
-  .editor footer { border-top: 1px solid var(--rule); display: flex; align-items: center; gap: 16px; }
-  .editor footer .spacer { flex: 1; }
-  .editor h2 { margin: 0; font-size: 20px; }
-  .editor .picker { overflow: auto; padding: 8px 24px 16px; flex: 1; min-height: 200px; }
-  .editor fieldset { border: 0; margin: 0; padding: 12px 0 0; }
-  .editor legend { font-weight: 700; font-size: 14px; padding: 0; display: flex; gap: 12px; align-items: baseline; width: 100%; }
-  .editor legend .linkish { font-weight: 400; font-size: 13px; }
-  .editor .opt { display: flex; gap: 10px; align-items: baseline; padding: 4px 0; font-size: 14px; cursor: pointer; }
-  .editor .opt small { color: var(--steel); }
-  .editor .opt input { accent-color: var(--signal); }
-  .editor .count { color: var(--steel); font-size: 14px; }
-  .editor .message { margin: 0; }
-  .button.secondary { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
-
-  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
-  .steps li {
-    position: relative; padding: 0 0 18px 28px; color: var(--steel); font-size: 15px;
-  }
-  .steps li::before {
-    content: ""; position: absolute; left: 4px; top: 6px; width: 10px; height: 10px;
-    border-radius: 50%; border: 2px solid var(--rule); background: var(--panel);
-  }
-  .steps li:not(:last-child)::after {
-    content: ""; position: absolute; left: 9px; top: 20px; bottom: 2px; width: 2px; background: var(--rule);
-  }
-  .steps li.active { color: var(--ink); }
-  .steps li.active::before { border-color: var(--signal); animation: pulse 1.2s ease-in-out infinite; }
-  .steps li.done { color: var(--ink); }
-  .steps li.done::before { border-color: var(--pass); background: var(--pass); }
-  .steps li.error { color: var(--fail); }
-  .steps li.error::before { border-color: var(--fail); background: var(--fail); }
-  .steps .detail { display: block; font-size: 13px; color: var(--steel); }
-  @keyframes pulse { 50% { transform: scale(1.25); } }
-  @media (prefers-reduced-motion: reduce) { .steps li.active::before { animation: none; } }
-
-  .bar { height: 4px; background: var(--rule); border-radius: 2px; overflow: hidden; margin-top: 6px; max-width: 220px; }
-  .bar i { display: block; height: 100%; width: 0; background: var(--signal); transition: width .4s; }
-
-  .result { display: grid; gap: 12px; }
-  .button {
-    display: inline-block; text-align: center; text-decoration: none; font: inherit; font-weight: 500;
-    background: var(--signal); color: var(--signal-ink); border: 0; border-radius: 6px;
-    padding: 11px 16px; cursor: pointer;
-  }
-  .button.quiet { background: transparent; color: var(--signal); padding: 0; text-align: left; }
-  .button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
-  .message { font-size: 14px; border-left: 3px solid var(--fail); padding: 4px 0 4px 12px; color: var(--ink); }
-  .message.note { border-color: var(--steel); }
-  .failed { font-size: 14px; color: var(--fail); margin: 0; }
+  h1, h2, h3, p { margin: 0; }
+  svg { flex: none; }
   .hidden { display: none !important; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
-  .table {
-    background: var(--table);
-    display: flex; align-items: flex-start; justify-content: center;
-    padding: 48px 24px; overflow: auto;
+  /* ---------- Top bar ---------- */
+  .topbar {
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 24px; height: 60px;
+    background: var(--topbar, var(--teal)); color: #fff; border-bottom: 1px solid color-mix(in srgb, #fff 10%, transparent);
   }
-  .proof {
-    width: 600px; max-width: 100%;
-    background: #fff;
-    box-shadow: 0 1px 2px rgba(10, 20, 30, .12), 0 18px 40px -12px rgba(10, 20, 30, .28);
-    border-radius: 2px;
-  }
-  .proof iframe { display: block; width: 100%; height: 900px; border: 0; }
-  .empty { color: var(--steel); text-align: center; margin-top: 18vh; max-width: 32ch; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+  .wordmark { font-weight: 700; font-size: 24px; letter-spacing: -.035em; line-height: 1; color: #fff; padding-bottom: 3px; }
+  .divider { width: 1px; height: 22px; background: color-mix(in srgb, #fff 25%, transparent); }
+  .product { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .product::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--lime); }
+  .topbar .tagline { margin-left: auto; color: color-mix(in srgb, #fff 70%, transparent); font-size: 13px; }
 
-  @media (max-width: 860px) {
-    .layout { grid-template-columns: 1fr; }
-    .controls { border-right: 0; border-bottom: 1px solid var(--rule); padding: 28px 20px; }
-    .table { padding: 24px 12px; }
+  /* ---------- Layout ---------- */
+  .layout { display: grid; grid-template-columns: 340px minmax(0, 1fr); min-height: 0; }
+  .panel {
+    background: var(--surface); border-right: 1px solid var(--line);
+    padding: 24px; display: flex; flex-direction: column; gap: 26px; min-width: 0;
+  }
+  .stage { padding: 32px; min-width: 0; display: flex; flex-direction: column; }
+
+  /* ---------- Form controls ---------- */
+  .group { display: grid; gap: 8px; min-width: 0; }
+  .label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .label { font-weight: 600; font-size: 14px; }
+  .hint { color: var(--muted); font-size: 13px; }
+  .badge {
+    font-size: 12px; font-weight: 600; color: var(--chip-run-ink); background: var(--chip-run-bg);
+    border-radius: 999px; padding: 2px 9px;
+  }
+  input[type=text], select {
+    width: 100%; min-width: 0; font: inherit; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; transition: border-color .15s, box-shadow .15s;
+  }
+  input[type=text]::placeholder { color: color-mix(in srgb, var(--muted) 75%, transparent); }
+  input[type=text]:focus, select:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+  select {
+    appearance: none; padding-right: 36px; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237b8496' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+  }
+  select:disabled, input:disabled { opacity: .6; cursor: default; }
+  .client-preview { font-size: 13px; color: var(--muted); min-height: 1.5em; overflow-wrap: anywhere; }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font: inherit; font-weight: 600; font-size: 14px; line-height: 1;
+    border-radius: 10px; padding: 11px 16px; border: 1px solid transparent;
+    cursor: pointer; text-decoration: none; white-space: nowrap;
+    transition: background .15s, border-color .15s, color .15s, transform .05s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: .5; cursor: default; transform: none; }
+  .btn-primary { background: var(--brand); color: var(--brand-ink); }
+  .btn-primary:hover:not(:disabled) { background: var(--brand-strong); }
+  .btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--line); }
+  .btn-secondary:hover:not(:disabled) { background: var(--surface-2); }
+  .btn-sm { padding: 8px 11px; font-size: 13px; border-radius: 8px; }
+  .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn-ghost:hover:not(:disabled) { background: var(--surface-2); }
+  .btn-danger { color: var(--fail); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  /* ---------- Idle: drop zone ---------- */
+  .idle { flex: 1; display: grid; align-content: center; justify-items: center; gap: 28px; }
+  .drop {
+    width: min(640px, 100%); text-align: center;
+    background: var(--surface); border: 2px dashed var(--line); border-radius: 20px;
+    padding: 56px 32px; cursor: pointer; box-shadow: var(--shadow);
+    display: grid; justify-items: center; gap: 14px;
+    transition: border-color .15s, background .15s, transform .15s;
+  }
+  .drop:hover, .drop.over { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 4%, var(--surface)); }
+  .drop.over { transform: scale(1.01); }
+  .drop-icon {
+    width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center;
+    background: var(--cyan); color: var(--teal);
+  }
+  .drop h1 { font-size: 24px; line-height: 1.2; letter-spacing: -.015em; }
+  .drop p { color: var(--muted); max-width: 42ch; }
+  .drop .meta { font-size: 13px; }
+  .how { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 28px; color: var(--muted); font-size: 13px; }
+  .how li { display: flex; align-items: center; gap: 8px; }
+  .how b {
+    width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--surface); border: 1px solid var(--line); color: var(--ink); font-size: 12px;
+  }
+
+  /* ---------- Run: status + preview ---------- */
+  .run { display: grid; gap: 20px; width: min(980px, 100%); margin: 0 auto; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .status { padding: 22px 24px; display: grid; gap: 20px; }
+  .status-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .status-head > div { min-width: 0; }
+  .eyebrow { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .status h2 { font-size: 19px; line-height: 1.3; margin-top: 2px; overflow-wrap: anywhere; }
+  .status .sub { color: var(--muted); font-size: 13px; margin-top: 4px; overflow-wrap: anywhere; }
+  .chip {
+    flex: none; display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; border-radius: 999px; padding: 5px 11px;
+    background: var(--chip-run-bg); color: var(--chip-run-ink);
+  }
+  .chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .chip[data-state="running"]::before { animation: pulse 1.2s ease-in-out infinite; }
+  .chip[data-state="done"] { background: var(--chip-done-bg); color: var(--chip-done-ink); }
+  .chip[data-state="warn"] { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn); }
+  .chip[data-state="error"] { background: color-mix(in srgb, var(--fail) 12%, transparent); color: var(--fail); }
+
+  .stepper { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .step { position: relative; display: grid; gap: 4px; padding-top: 30px; color: var(--muted); font-size: 13px; min-width: 0; }
+  .step::before {
+    content: ""; position: absolute; top: 4px; left: 0; width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--line); background: var(--surface); box-sizing: border-box;
+  }
+  .step::after { content: ""; position: absolute; top: 12px; left: 26px; right: 6px; height: 2px; background: var(--line); border-radius: 2px; }
+  .step:last-child::after { display: none; }
+  .step .step-label { font-weight: 600; color: var(--ink); font-size: 14px; }
+  .step .detail { overflow-wrap: anywhere; }
+  .step[data-state="active"]::before { border-color: var(--brand); box-shadow: 0 0 0 4px color-mix(in srgb, var(--cyan) 45%, transparent); animation: pulse 1.2s ease-in-out infinite; }
+  .step[data-state="done"]::before { border-color: var(--done); background: var(--done) var(--done-check) center / 11px no-repeat; }
+  .step[data-state="done"]::after { background: var(--done); }
+  .step[data-state="error"]::before { border-color: var(--fail); background: var(--fail); }
+  .step[data-state="error"] .step-label { color: var(--fail); }
+  .step:not([data-state]) .step-label { color: var(--muted); font-weight: 500; }
+  @keyframes pulse { 50% { opacity: .55; } }
+  @media (prefers-reduced-motion: reduce) { .step[data-state="active"]::before, .chip::before { animation: none !important; } }
+
+  .progress { height: 6px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+  .progress i { display: block; height: 100%; width: 0; background: var(--brand); border-radius: inherit; transition: width .5s ease; }
+
+  .result { display: grid; gap: 14px; }
+  .result-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .summary { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .summary.ok { color: var(--pass); }
+  .summary.bad { color: var(--warn); }
+  .failed-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .failed-list span {
+    font-size: 12px; padding: 4px 9px; border-radius: 999px;
+    background: color-mix(in srgb, var(--fail) 10%, transparent); color: var(--fail);
+  }
+  .note { font-size: 13px; color: var(--muted); border-left: 3px solid var(--line); padding: 2px 0 2px 12px; }
+  .alert {
+    display: flex; gap: 10px; align-items: flex-start; font-size: 14px;
+    background: color-mix(in srgb, var(--fail) 8%, transparent); color: var(--ink);
+    border: 1px solid color-mix(in srgb, var(--fail) 30%, transparent); border-radius: 10px; padding: 12px 14px;
+    overflow-wrap: anywhere;
+  }
+  .alert svg { color: var(--fail); margin-top: 2px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .preview { overflow: hidden; }
+  .preview-head {
+    display: flex; justify-content: space-between; gap: 12px; align-items: center;
+    padding: 12px 18px; border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 600;
+  }
+  .preview-head .muted { color: var(--muted); font-weight: 400; }
+  .preview-body { background: var(--surface-2); padding: 28px 16px; display: flex; justify-content: center; }
+  .preview-body iframe {
+    display: block; width: 600px; max-width: 100%; height: 900px; border: 0;
+    background: #fff; border-radius: 4px; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 16px 40px -18px rgba(0, 0, 0, .35);
+  }
+
+  /* ---------- Client list editor ---------- */
+  dialog.editor {
+    width: min(660px, calc(100vw - 32px)); max-height: calc(100vh - 48px);
+    padding: 0; border: 1px solid var(--line); border-radius: 16px;
+    background: var(--surface); color: var(--ink); box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .45);
+  }
+  dialog.editor::backdrop { background: rgba(10, 14, 22, .5); backdrop-filter: blur(2px); }
+  .editor form { display: flex; flex-direction: column; max-height: calc(100vh - 48px); }
+  .editor header { padding: 22px 24px 18px; border-bottom: 1px solid var(--line); display: grid; gap: 14px; }
+  .editor h2 { font-size: 19px; }
+  .editor .field { display: grid; gap: 6px; font-size: 14px; font-weight: 600; }
+  .editor .picker { overflow: auto; padding: 4px 24px 18px; flex: 1; min-height: 200px; }
+  .editor fieldset { border: 0; margin: 0; padding: 16px 0 0; }
+  .editor legend {
+    width: 100%; padding: 0 0 6px; display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+  }
+  .editor legend button {
+    font: inherit; font-size: 12px; text-transform: none; letter-spacing: 0; font-weight: 600;
+    background: none; border: 0; color: var(--brand); cursor: pointer; padding: 0;
+  }
+  .editor .opt {
+    display: flex; gap: 10px; align-items: center; padding: 7px 8px; margin: 0 -8px;
+    border-radius: 8px; font-size: 14px; cursor: pointer;
+  }
+  .editor .opt:hover { background: var(--surface-2); }
+  .editor .opt small { color: var(--muted); margin-left: auto; text-align: right; }
+  .editor .opt input { accent-color: var(--brand); width: 16px; height: 16px; margin: 0; }
+  .editor footer { padding: 16px 24px; border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+  .editor footer .spacer { flex: 1; }
+  .editor .count { color: var(--muted); font-size: 13px; }
+  .editor .alert { margin: 0 24px 16px; }
+
+  /* ---------- Small screens ---------- */
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+    .panel { border-right: 0; border-bottom: 1px solid var(--line); padding: 20px 16px; gap: 20px; }
+    .stage { padding: 20px 16px; }
+    .topbar { padding: 0 16px; }
+    .topbar .tagline { display: none; }
+    .drop { padding: 36px 20px; }
+    .drop h1 { font-size: 20px; }
+  }
+  @media (max-width: 640px) {
+    .stepper { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .step { padding: 0 0 16px 30px; }
+    .step::before { top: 1px; }
+    .step::after { top: 22px; left: 8px; right: auto; bottom: 2px; width: 2px; height: auto; }
+    .status { padding: 18px 16px; }
+    .preview-body { padding: 16px 8px; }
+    .preview-body iframe { height: 720px; }
   }
 </style>
 </head>
 <body>
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Sesimi EDM Checker home">
+    <!-- SESIMI BRAND: text wordmark for now; replace with the official Sesimi_Wordmark SVG (white version). -->
+    <span class="wordmark" aria-label="Sesimi">sesimi</span>
+    <span class="divider" aria-hidden="true"></span>
+    <span class="product">EDM Checker</span>
+  </a>
+  <span class="tagline">Render an EDM template and test it across email clients</span>
+</header>
+
 <div class="layout">
-  <section class="controls">
-    <div>
-      <h1>Check an EDM in Mailgun</h1>
-      <p class="lede">Drop a Sesimi EDM template zip. It’s rendered with its sample data and sent to Mailgun Email Preview.</p>
+  <aside class="panel" aria-label="Check settings">
+    <div class="group">
+      <label class="label" for="subject">Subject line</label>
+      <input type="text" id="subject" autocomplete="off" placeholder="Defaults to the file name">
     </div>
 
-    <label class="field">
-      Subject line <small>Optional. Defaults to the file name.</small>
-      <input type="text" id="subject" autocomplete="off">
-    </label>
-
-    <div class="field-group">
-      <label class="field" for="list">
-        Email clients <small>Shared lists — everyone using this page sees the same ones.</small>
-      </label>
-      <select id="list" style="margin-top:6px"></select>
-      <div class="list-actions" style="margin-top:8px">
-        <button type="button" class="linkish" id="list-new">New list</button>
-        <button type="button" class="linkish" id="list-edit">Edit</button>
-        <button type="button" class="linkish danger" id="list-delete">Delete</button>
+    <div class="group">
+      <div class="label-row">
+        <label class="label" for="list">Email clients</label>
+        <span class="badge hidden" id="list-count"></span>
       </div>
+      <select id="list"></select>
+      <p class="client-preview" id="list-preview"></p>
+      <div class="toolbar">
+        <button type="button" class="btn btn-sm btn-ghost" id="list-new">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          New list
+        </button>
+        <button type="button" class="btn btn-sm btn-ghost" id="list-edit">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          Edit
+        </button>
+        <button type="button" class="btn btn-sm btn-ghost btn-danger" id="list-delete">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+          Delete
+        </button>
+      </div>
+      <p class="hint">Lists are shared with everyone using this page.</p>
     </div>
+  </aside>
 
-    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a template zip to check">
-      <strong>Drop the template zip here</strong>
-      <span>or click to choose a file</span>
-      <input type="file" id="file" accept=".zip,application/zip">
-    </div>
+  <main class="stage" id="stage">
+    <!-- Before a check: big drop zone -->
+    <section class="idle" id="idle">
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a template zip to check">
+        <div class="drop-icon" aria-hidden="true">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M20 15v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/></svg>
+        </div>
+        <h1>Drop an EDM template zip</h1>
+        <p>It’s rendered with the template’s sample data, then tested in the email clients you’ve selected.</p>
+        <span class="btn btn-primary">Browse files</span>
+        <p class="meta" id="drop-meta">ZIP exported from Sesimi</p>
+        <input type="file" id="file" accept=".zip,application/zip" hidden>
+      </div>
+      <ol class="how" aria-label="How it works">
+        <li><b>1</b>Drop the zip</li>
+        <li><b>2</b>It’s rendered and sent to Mailgun</li>
+        <li><b>3</b>Results open when ready</li>
+      </ol>
+    </section>
 
-    <ol class="steps hidden" id="steps" aria-live="polite">
-      <li id="s-render">Rendering the template<span class="detail"></span></li>
-      <li id="s-send">Sending to Mailgun<span class="detail"></span></li>
-      <li id="s-clients">Rendering in email clients<span class="detail"></span><div class="bar"><i id="bar"></i></div></li>
-      <li id="s-ready">Results ready<span class="detail"></span></li>
-    </ol>
+    <!-- During and after a check -->
+    <section class="run hidden" id="run" aria-live="polite">
+      <div class="card status">
+        <div class="status-head">
+          <div>
+            <p class="eyebrow" id="run-eyebrow">Checking</p>
+            <h2 id="run-title"></h2>
+            <p class="sub" id="run-sub"></p>
+          </div>
+          <span class="chip" id="run-chip" data-state="running">In progress</span>
+        </div>
 
-    <div class="result hidden" id="result"></div>
-    <div id="error" class="message hidden" role="alert"></div>
-    <button class="button quiet hidden" id="again" type="button">Check another template</button>
-  </section>
+        <ol class="stepper" id="steps">
+          <li class="step" id="s-render"><span class="step-label">Render</span><span class="detail"></span></li>
+          <li class="step" id="s-send"><span class="step-label">Send to Mailgun</span><span class="detail"></span></li>
+          <li class="step" id="s-clients"><span class="step-label">Email clients</span><span class="detail"></span></li>
+          <li class="step" id="s-ready"><span class="step-label">Results</span><span class="detail"></span></li>
+        </ol>
+        <div class="progress" aria-hidden="true"><i id="bar"></i></div>
 
-  <section class="table">
-    <div class="proof hidden" id="proof"><iframe id="frame" title="Rendered email" sandbox></iframe></div>
-    <p class="empty" id="empty">The rendered email appears here once you drop a zip.</p>
-  </section>
+        <div class="result hidden" id="result"></div>
+        <div class="alert hidden" id="error" role="alert"></div>
+        <div class="actions">
+          <button class="btn btn-secondary hidden" id="again" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+            Check another template
+          </button>
+        </div>
+      </div>
+
+      <div class="card preview hidden" id="proof">
+        <div class="preview-head"><span>Rendered email</span><span class="muted">Sample data · 600px wide</span></div>
+        <div class="preview-body"><iframe id="frame" title="Rendered email" sandbox></iframe></div>
+      </div>
+    </section>
+  </main>
 </div>
 
 <dialog class="editor" id="editor" aria-labelledby="editor-title">
@@ -226,7 +412,7 @@
       <h2 id="editor-title">New client list</h2>
       <label class="field">
         List name
-        <input type="text" id="editor-name" maxlength="60" autocomplete="off" required>
+        <input type="text" id="editor-name" maxlength="60" autocomplete="off" required placeholder="e.g. APAC CHECKER">
       </label>
       <label class="field">
         Find a client
@@ -234,69 +420,123 @@
       </label>
     </header>
     <div class="picker" id="editor-picker"><p class="count">Loading clients from Mailgun…</p></div>
+    <p class="alert hidden" id="editor-error" role="alert"></p>
     <footer>
       <span class="count" id="editor-count">0 selected</span>
       <span class="spacer"></span>
-      <button type="button" class="button secondary" id="editor-cancel">Cancel</button>
-      <button type="submit" class="button" id="editor-save">Save list</button>
+      <button type="button" class="btn btn-secondary" id="editor-cancel">Cancel</button>
+      <button type="submit" class="btn btn-primary" id="editor-save">Save list</button>
     </footer>
-    <p class="message hidden" id="editor-error" role="alert" style="margin:0 24px 16px"></p>
   </form>
 </dialog>
 
 <script>
   const $ = (id) => document.getElementById(id);
-  const drop = $("drop"), fileInput = $("file");
+  const drop = $("drop"), fileInput = $("file"), listSelect = $("list");
   let busy = false;
+  let lists = [];
+  let allClients = null;   // all Mailgun clients, loaded once
+  let editingId = null;    // null = creating a new list
+  let maxUploadBytes = 0;
+  let pageCount = 1;       // pages in the current template
 
+  const ICON_ALERT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>';
+  const ICON_EXTERNAL = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+
+  // ---------- Small helpers ----------
+  function el(tag, props = {}, ...children) {
+    const node = Object.assign(document.createElement(tag), props);
+    node.append(...children);
+    return node;
+  }
   function setStep(id, state, detail) {
     const li = $(id);
-    li.className = state || "";
+    if (state) li.dataset.state = state; else delete li.dataset.state;
     if (detail !== undefined) li.querySelector(".detail").textContent = detail;
   }
+  function setChip(state, text) {
+    $("run-chip").dataset.state = state;
+    $("run-chip").textContent = text;
+  }
+  function showView(name) {
+    $("idle").classList.toggle("hidden", name !== "idle");
+    $("run").classList.toggle("hidden", name !== "run");
+  }
   function showError(text) {
-    $("error").textContent = text;
+    $("error").innerHTML = ICON_ALERT;
+    $("error").append(el("span", { textContent: text }));
     $("error").classList.remove("hidden");
     $("again").classList.remove("hidden");
+    $("run-eyebrow").textContent = "Check stopped";
+    setChip("error", "Error");
     busy = false;
     updateListButtons();
   }
+  function addNote(text) {
+    $("result").append(el("p", { className: "note", textContent: text }));
+    $("result").classList.remove("hidden");
+  }
+  async function api(method, url, body) {
+    const res = await fetch(url, {
+      method, headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Something went wrong (error ${res.status}).`);
+    return data;
+  }
+  const remember = {
+    get() { try { return localStorage.getItem("edm-list") || ""; } catch { return ""; } },
+    set(v) { try { localStorage.setItem("edm-list", v); } catch {} },
+  };
+
+  // ---------- Reset / start ----------
   function reset() {
     busy = false;
     updateListButtons();
     ["s-render", "s-send", "s-clients", "s-ready"].forEach((s) => setStep(s, "", ""));
     $("bar").style.width = "0";
-    ["steps", "result", "error", "again", "proof"].forEach((id) => $(id).classList.add("hidden"));
-    $("empty").classList.remove("hidden");
+    ["result", "error", "again", "proof"].forEach((id) => $(id).classList.add("hidden"));
     $("frame").removeAttribute("srcdoc");
     $("result").replaceChildren();
+    $("error").replaceChildren();
     fileInput.value = "";
+    showView("idle");
   }
 
   drop.addEventListener("click", () => !busy && fileInput.click());
   drop.addEventListener("keydown", (e) => {
     if ((e.key === "Enter" || e.key === " ") && !busy) { e.preventDefault(); fileInput.click(); }
   });
-  drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
-  drop.addEventListener("dragleave", () => drop.classList.remove("over"));
-  drop.addEventListener("drop", (e) => {
-    e.preventDefault(); drop.classList.remove("over");
-    if (e.dataTransfer.files[0]) start(e.dataTransfer.files[0]);
-  });
   fileInput.addEventListener("change", () => fileInput.files[0] && start(fileInput.files[0]));
   $("again").addEventListener("click", reset);
+
+  // Drop anywhere on the page while idle.
+  let dragDepth = 0;
+  document.addEventListener("dragenter", (e) => { e.preventDefault(); if (!busy) { dragDepth++; drop.classList.add("over"); } });
+  document.addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; drop.classList.remove("over"); } });
+  document.addEventListener("dragover", (e) => e.preventDefault());
+  document.addEventListener("drop", (e) => {
+    e.preventDefault(); dragDepth = 0; drop.classList.remove("over");
+    if (!busy && !$("editor").open && e.dataTransfer.files[0]) start(e.dataTransfer.files[0]);
+  });
 
   async function start(file) {
     if (busy) return;
     reset();
+    showView("run");
+    const list = lists.find((l) => l.id === listSelect.value);
+    $("run-eyebrow").textContent = "Checking";
+    $("run-title").textContent = file.name;
+    $("run-sub").textContent = `${$("subject").value.trim() || "Subject: file name"} · ${list ? `${list.name} (${list.clients.length} clients)` : "Mailgun default clients"}`;
+    setChip("running", "In progress");
+
     if (!/\.zip$/i.test(file.name)) return showError("That isn’t a zip. Drop the template zip exported from Sesimi.");
     if (maxUploadBytes && file.size > maxUploadBytes) {
       return showError(`That zip is ${(file.size / 1048576).toFixed(1)} MB; the limit here is ${(maxUploadBytes / 1048576).toFixed(1)} MB.`);
     }
     busy = true;
     updateListButtons();
-    $("steps").classList.remove("hidden");
-    setStep("s-render", "active", file.name);
+    setStep("s-render", "active", "Rendering with sample data");
 
     const params = new URLSearchParams({ name: file.name, subject: $("subject").value, list: listSelect.value });
     let data;
@@ -307,16 +547,16 @@
       data = await res.json().catch(() => ({ error: res.status === 413 ? "That zip is too large to upload here." : res.status === 504 ? "The server took too long. Try again." : `Upload failed (error ${res.status}).` }));
       if (!res.ok) throw new Error(data.error || "Upload failed.");
     } catch (err) {
-      setStep("s-render", "error");
+      setStep("s-render", "error", "Failed");
       return showError(err.message);
     }
 
     const check = data.checks[0];
-    setStep("s-render", "done", data.checks.length > 1 ? `${data.checks.length} pages rendered` : file.name);
+    pageCount = data.checks.length;
+    setStep("s-render", "done", data.checks.length > 1 ? `${data.checks.length} pages` : "Done");
     setStep("s-send", "done", check.subject);
     $("frame").srcdoc = check.html;
     $("proof").classList.remove("hidden");
-    $("empty").classList.add("hidden");
     if (check.warnings.length) {
       addNote("Mailgun warnings: " + check.warnings.map((w) => w.message || w.name || w).join("; "));
     }
@@ -325,14 +565,6 @@
     busy = false;
     updateListButtons();
     $("again").classList.remove("hidden");
-  }
-
-  function addNote(text) {
-    const p = document.createElement("p");
-    p.className = "message note";
-    p.textContent = text;
-    $("result").append(p);
-    $("result").classList.remove("hidden");
   }
 
   async function poll(check, drivesSteps) {
@@ -346,73 +578,67 @@
         s = await res.json().catch(() => ({ error: `Checking progress failed (error ${res.status}).` }));
         if (!res.ok) throw new Error(s.error);
       } catch (err) {
-        if (drivesSteps) setStep("s-clients", "error");
+        if (drivesSteps) setStep("s-clients", "error", "Failed");
         return showError(err.message || "Lost contact with the server while checking progress.");
       }
       if (drivesSteps && s.total) {
-        setStep("s-clients", "active", `${s.done} of ${s.total} clients`);
+        setStep("s-clients", "active", `${s.done} of ${s.total} rendered`);
         $("bar").style.width = Math.round((s.done / s.total) * 100) + "%";
       }
       if (s.complete) {
         if (drivesSteps) {
           setStep("s-clients", "done", `${s.total} clients`);
-          setStep("s-ready", "done", s.failed.length ? `${s.failed.length} client(s) failed to render` : "All clients rendered");
+          setStep("s-ready", "done", s.failed.length ? `${s.failed.length} failed` : "All rendered");
+          $("run-eyebrow").textContent = "Check complete";
+          if (s.failed.length) setChip("warn", `${s.failed.length} failed`);
+          else setChip("done", "Complete");
         }
         showResult(check, s);
         return;
       }
     }
-    if (drivesSteps) setStep("s-clients", "error", "Still running after 15 minutes");
+    if (drivesSteps) setStep("s-clients", "error", "Still running after 15 min");
     addNote(`Mailgun is still working on test ${check.testId}. Check it in the Mailgun dashboard.`);
   }
 
   function showResult(check, s) {
     const box = $("result");
+    const multi = pageCount > 1;
+    const ok = s.failed.length === 0;
+    const row = el("div", { className: "result-row" });
+    row.append(el("span", {
+      className: "summary " + (ok ? "ok" : "bad"),
+      textContent: (multi ? `Page ${check.page}: ` : "") + (ok ? `All ${s.total} clients rendered` : `${s.total - s.failed.length} of ${s.total} clients rendered`),
+    }));
     if (s.shareUrl) {
-      const a = document.createElement("a");
-      a.className = "button"; a.href = s.shareUrl; a.target = "_blank"; a.rel = "noopener";
-      a.textContent = check.page && $("result").querySelectorAll("a.button").length ? `Open results in Mailgun (page ${check.page})` : "Open results in Mailgun";
-      box.prepend(a);
+      const a = el("a", { className: "btn btn-primary", href: s.shareUrl, target: "_blank", rel: "noopener" });
+      a.innerHTML = ICON_EXTERNAL;
+      a.append(multi ? `Open page ${check.page} in Mailgun` : "Open results in Mailgun");
+      row.append(a);
       // Open the results automatically. Browsers block this unless pop-ups are allowed for this site.
       // (No "noopener" feature: with it, window.open returns null even on success.)
       const opened = window.open(s.shareUrl, "_blank");
       if (opened) opened.opener = null;
       else if (!box.querySelector(".popup-note")) {
-        const note = document.createElement("p");
-        note.className = "popup-note";
-        note.textContent = "Tip: allow pop-ups for this page (icon at the right of the address bar) and results will open automatically next time.";
+        const note = el("p", { className: "note popup-note", textContent: "Tip: allow pop-ups for this page (icon at the right of the address bar) and results will open automatically." });
         box.append(note);
       }
-    } else {
-      addNote(`Results are ready. Find test ${check.testId} in the Mailgun dashboard (a share link couldn’t be created).`);
     }
-    if (s.failed.length) {
-      const p = document.createElement("p");
-      p.className = "failed";
-      p.textContent = "Failed to render in: " + s.failed.join(", ");
-      box.append(p);
+    box.prepend(row);
+    if (!s.shareUrl) addNote(`Find test ${check.testId} in the Mailgun dashboard (a share link couldn’t be created).`);
+    if (!ok) {
+      const failed = el("div", { className: "failed-list" });
+      failed.setAttribute("aria-label", "Clients that failed to render");
+      s.failed.forEach((name) => failed.append(el("span", { textContent: name })));
+      row.after(failed);
     }
     box.classList.remove("hidden");
   }
 
   // ---------- Shared client lists ----------
-  const listSelect = $("list");
-  let lists = [];
-  let allClients = null; // loaded from Mailgun the first time the editor opens
-  let editingId = null;  // null = creating a new list
-
-  const remember = {
-    get() { try { return localStorage.getItem("edm-list") || ""; } catch { return ""; } },
-    set(v) { try { localStorage.setItem("edm-list", v); } catch {} },
-  };
-
-  async function api(method, url, body) {
-    const res = await fetch(url, {
-      method, headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined,
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || "Something went wrong.");
-    return data;
+  async function ensureClients() {
+    if (!allClients) allClients = (await api("GET", "/api/clients")).clients;
+    return allClients;
   }
 
   async function loadLists(selectId) {
@@ -420,15 +646,30 @@
       lists = (await api("GET", "/api/lists")).lists;
     } catch (err) {
       lists = [];
-      showError("Couldn’t load the client lists: " + err.message);
+      $("list-preview").textContent = "Couldn’t load the client lists: " + err.message;
     }
     const want = selectId || listSelect.value || remember.get();
     listSelect.replaceChildren();
-    for (const l of lists) listSelect.append(new Option(`${l.name} (${l.clients.length})`, l.id));
+    for (const l of lists) listSelect.append(new Option(l.name, l.id));
     listSelect.append(new Option("Mailgun default clients", ""));
     listSelect.value = lists.some((l) => l.id === want) ? want : (lists[0] ? lists[0].id : "");
     remember.set(listSelect.value);
     updateListButtons();
+    describeList();
+  }
+
+  async function describeList() {
+    const list = lists.find((l) => l.id === listSelect.value);
+    $("list-count").classList.toggle("hidden", !list);
+    if (!list) { $("list-preview").textContent = "Mailgun’s default set of clients."; return; }
+    $("list-count").textContent = `${list.clients.length} client${list.clients.length === 1 ? "" : "s"}`;
+    try {
+      const byId = new Map((await ensureClients()).map((c) => [c.id, c.client]));
+      const names = [...new Set(list.clients.map((id) => byId.get(id) || id))];
+      $("list-preview").textContent = names.slice(0, 4).join(", ") + (names.length > 4 ? ` +${names.length - 4} more` : "");
+    } catch {
+      $("list-preview").textContent = "";
+    }
   }
 
   function updateListButtons() {
@@ -437,8 +678,9 @@
     $("list-delete").disabled = busy || !hasList;
     $("list-new").disabled = busy;
     listSelect.disabled = busy;
+    $("subject").disabled = busy;
   }
-  listSelect.addEventListener("change", () => { remember.set(listSelect.value); updateListButtons(); });
+  listSelect.addEventListener("change", () => { remember.set(listSelect.value); updateListButtons(); describeList(); });
 
   $("list-delete").addEventListener("click", async () => {
     const list = lists.find((l) => l.id === listSelect.value);
@@ -468,9 +710,9 @@
     $("editor").showModal();
     $("editor-name").focus();
     try {
-      if (!allClients) allClients = (await api("GET", "/api/clients")).clients;
+      await ensureClients();
     } catch (err) {
-      $("editor-picker").innerHTML = "";
+      $("editor-picker").replaceChildren();
       return editorError("Couldn’t load clients from Mailgun: " + err.message);
     }
     buildPicker(new Set(list ? list.clients : []));
@@ -485,30 +727,19 @@
       groups.get(c.category).push(c);
     }
     for (const [category, clients] of groups) {
-      const fs = document.createElement("fieldset");
-      const legend = document.createElement("legend");
-      legend.append(category);
-      const all = document.createElement("button");
-      all.type = "button"; all.className = "linkish"; all.textContent = "Select all";
+      const fs = el("fieldset");
+      const all = el("button", { type: "button", textContent: "Select all" });
       all.addEventListener("click", () => {
         const boxes = [...fs.querySelectorAll(".opt:not(.hidden) input")];
         const turnOn = boxes.some((b) => !b.checked);
         boxes.forEach((b) => (b.checked = turnOn));
         updateCount();
       });
-      legend.append(all);
-      fs.append(legend);
+      fs.append(el("legend", {}, category, all));
       for (const c of clients) {
-        const label = document.createElement("label");
-        label.className = "opt";
+        const box = el("input", { type: "checkbox", value: c.id, checked: selected.has(c.id) });
+        const label = el("label", { className: "opt" }, box, el("span", { textContent: c.client }), el("small", { textContent: c.os }));
         label.dataset.search = `${c.client} ${c.os} ${c.category} ${c.id}`.toLowerCase();
-        const box = document.createElement("input");
-        box.type = "checkbox"; box.value = c.id; box.checked = selected.has(c.id);
-        const name = document.createElement("span");
-        name.textContent = c.client;
-        const os = document.createElement("small");
-        os.textContent = c.os;
-        label.append(box, name, os);
         fs.append(label);
       }
       picker.append(fs);
@@ -535,7 +766,8 @@
   }
 
   function editorError(text) {
-    $("editor-error").textContent = text;
+    $("editor-error").innerHTML = ICON_ALERT;
+    $("editor-error").append(el("span", { textContent: text }));
     $("editor-error").classList.remove("hidden");
   }
 
@@ -561,8 +793,11 @@
     }
   });
 
-  let maxUploadBytes = 0;
-  fetch("/api/config").then((r) => r.json()).then((c) => (maxUploadBytes = c.maxUploadBytes || 0)).catch(() => {});
+  // ---------- Start up ----------
+  fetch("/api/config").then((r) => r.json()).then((c) => {
+    maxUploadBytes = c.maxUploadBytes || 0;
+    if (maxUploadBytes) $("drop-meta").textContent = `ZIP exported from Sesimi · up to ${(maxUploadBytes / 1048576).toFixed(maxUploadBytes < 10485760 ? 1 : 0)} MB`;
+  }).catch(() => {});
   loadLists();
 </script>
 </body>
