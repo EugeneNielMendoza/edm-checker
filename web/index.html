@@ -215,7 +215,7 @@
   </section>
 
   <section class="table">
-    <div class="proof hidden" id="proof"><iframe id="frame" title="Rendered email" sandbox="allow-same-origin"></iframe></div>
+    <div class="proof hidden" id="proof"><iframe id="frame" title="Rendered email" sandbox></iframe></div>
     <p class="empty" id="empty">The rendered email appears here once you drop a zip.</p>
   </section>
 </div>
@@ -268,7 +268,7 @@
     $("bar").style.width = "0";
     ["steps", "result", "error", "again", "proof"].forEach((id) => $(id).classList.add("hidden"));
     $("empty").classList.remove("hidden");
-    $("frame").removeAttribute("src");
+    $("frame").removeAttribute("srcdoc");
     $("result").replaceChildren();
     fileInput.value = "";
   }
@@ -290,6 +290,9 @@
     if (busy) return;
     reset();
     if (!/\.zip$/i.test(file.name)) return showError("That isn’t a zip. Drop the template zip exported from Sesimi.");
+    if (maxUploadBytes && file.size > maxUploadBytes) {
+      return showError(`That zip is ${(file.size / 1048576).toFixed(1)} MB; the limit here is ${(maxUploadBytes / 1048576).toFixed(1)} MB.`);
+    }
     busy = true;
     updateListButtons();
     $("steps").classList.remove("hidden");
@@ -301,7 +304,7 @@
       const res = await fetch("/api/checks?" + params, {
         method: "POST", headers: { "Content-Type": "application/zip" }, body: file,
       });
-      data = await res.json();
+      data = await res.json().catch(() => ({ error: res.status === 413 ? "That zip is too large to upload here." : res.status === 504 ? "The server took too long. Try again." : `Upload failed (error ${res.status}).` }));
       if (!res.ok) throw new Error(data.error || "Upload failed.");
     } catch (err) {
       setStep("s-render", "error");
@@ -311,7 +314,7 @@
     const check = data.checks[0];
     setStep("s-render", "done", data.checks.length > 1 ? `${data.checks.length} pages rendered` : file.name);
     setStep("s-send", "done", check.subject);
-    $("frame").src = check.previewUrl;
+    $("frame").srcdoc = check.html;
     $("proof").classList.remove("hidden");
     $("empty").classList.add("hidden");
     if (check.warnings.length) {
@@ -340,7 +343,7 @@
       let s;
       try {
         const res = await fetch("/api/checks/" + encodeURIComponent(check.testId));
-        s = await res.json();
+        s = await res.json().catch(() => ({ error: `Checking progress failed (error ${res.status}).` }));
         if (!res.ok) throw new Error(s.error);
       } catch (err) {
         if (drivesSteps) setStep("s-clients", "error");
@@ -558,6 +561,8 @@
     }
   });
 
+  let maxUploadBytes = 0;
+  fetch("/api/config").then((r) => r.json()).then((c) => (maxUploadBytes = c.maxUploadBytes || 0)).catch(() => {});
   loadLists();
 </script>
 </body>

@@ -15,12 +15,28 @@ MAILGUN_API_KEY=your-key APP_PASSWORD=choose-one npm start
 
 Then open http://localhost:3000.
 
+Or keep settings in a `.env` file (ignored by git) and run `node --env-file=.env server.js`.
+
 With Docker:
 
 ```
 docker build -t edm-checker .
 docker run -p 3000:3000 -v edm-data:/app/data -e MAILGUN_API_KEY=your-key -e APP_PASSWORD=choose-one edm-checker
 ```
+
+## Deploy on Vercel
+
+The same code runs on Vercel (`api/index.mjs` + `vercel.json`); `server.js` is only for local/Docker.
+
+1. Import the GitHub repo in Vercel (Framework preset: **Other**, no build command).
+2. **Storage → Create → Blob**, choose **Private** access, and connect it to the project.
+   Vercel then sets `BLOB_READ_WRITE_TOKEN`, and client lists are saved there.
+3. **Settings → Environment Variables**: add `MAILGUN_API_KEY` (mark it Sensitive),
+   `APP_PASSWORD`, and optionally `PREVIEW_CLIENTS` / `PREVIEW_CLIENTS_NAME` /
+   `MAILGUN_REGION`. Redeploy after adding them.
+4. Open the deployment, enter the password, and run one check end to end.
+
+Limits on Vercel: zips up to about 4.4 MB (Vercel's request limit), 60-second requests.
 
 ## Settings (environment variables)
 
@@ -31,6 +47,8 @@ docker run -p 3000:3000 -v edm-data:/app/data -e MAILGUN_API_KEY=your-key -e APP
 | APP_PASSWORD | strongly recommended | Visitors must enter it (any username). |
 | PORT | no | Default 3000. |
 | DATA_DIR | no | Where shared client lists are saved (`client-lists.json`). Default `./data`. In Docker, mount a volume at `/app/data` so lists survive redeploys. |
+| BLOB_READ_WRITE_TOKEN | on Vercel | Set by Vercel when a Blob store is connected; lists are then saved in Blob instead of `DATA_DIR`. |
+| BLOB_ACCESS | no | `private` (default) or `public`, matching the Blob store. |
 | PREVIEW_CLIENTS | no | Comma-separated client IDs for the first client list, used only when no lists exist yet. |
 | PREVIEW_CLIENTS_NAME | no | Name of that first list (e.g. `APAC CHECKER`). Default `Default`. |
 
@@ -40,11 +58,13 @@ docker run -p 3000:3000 -v edm-data:/app/data -e MAILGUN_API_KEY=your-key -e APP
   Node's permission model: it can only read the template, the renderer script and
   `node_modules` (not `.env` or the saved lists), can't write files and can't start
   other programs, with a 30-second limit. It can still make network requests.
-  Treat that as a safety net, not a guarantee: host this only where Sesimi
-  staff can reach it (VPN / internal network / SSO proxy), and set APP_PASSWORD.
-- Uploads are limited to 20 MB (50 MB unpacked); rendered previews are kept in
-  memory for one hour and nothing is written to disk except a temp folder that
-  is deleted after each upload.
+  Treat that as a safety net, not a guarantee, and always set APP_PASSWORD when
+  the app is reachable by anyone else (on Vercel it's on the public internet).
+- Requests that change anything must come from the app's own page (cross-site
+  requests are rejected).
+- Uploads are limited to 20 MB locally / ~4.4 MB on Vercel (50 MB unpacked). Nothing
+  is kept on the server except the client lists; the upload's temp folder is deleted
+  after each check.
 - Client templates are sent to Mailgun, the same as checking them by hand.
 
 ## Mailgun API notes (confirmed against a live account)
