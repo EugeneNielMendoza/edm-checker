@@ -1,15 +1,20 @@
 import { useEffect, useState } from "react";
 import { api, getCheckStatus, type RecentTest } from "../lib/api";
-import { Button } from "./Button";
 import { ExternalIcon } from "./Icons";
 
-const SHOW_AT_FIRST = 8;
+const SHOW_AT_FIRST = 5;
+
+interface RecentChecksProps {
+  /** Change this number to load the list again (e.g. after a new check is sent). */
+  refreshKey: number;
+}
 
 /**
  * The latest tests in Mailgun, newest first, with a button to reopen each one's results.
- * This includes tests made directly in the Mailgun dashboard. Reading them uses no credits.
+ * Everyone using the page sees the same list, including tests made directly in the Mailgun
+ * dashboard. Reading it uses no credits.
  */
-export function RecentChecks() {
+export function RecentChecks({ refreshKey }: RecentChecksProps) {
   const [tests, setTests] = useState<RecentTest[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
@@ -19,9 +24,12 @@ export function RecentChecks() {
 
   useEffect(() => {
     api<{ tests: RecentTest[] }>("GET", "/api/tests")
-      .then(({ tests }) => setTests(tests))
+      .then(({ tests }) => {
+        setTests(tests);
+        setError(null);
+      })
       .catch((err) => setError("Couldn’t load recent checks: " + err.message));
-  }, []);
+  }, [refreshKey]);
 
   async function open(test: RecentTest) {
     setRowError(null);
@@ -53,58 +61,65 @@ export function RecentChecks() {
     }
   }
 
-  if (error) return <p className="text-[13px] text-muted">{error}</p>;
-  if (!tests) return <p className="text-[13px] text-muted">Loading recent checks…</p>;
-  if (!tests.length) return null;
+  const shown = showAll ? (tests ?? []) : (tests ?? []).slice(0, SHOW_AT_FIRST);
 
-  const shown = showAll ? tests : tests.slice(0, SHOW_AT_FIRST);
   return (
-    <section aria-labelledby="recent-title" className="w-full max-w-[640px] rounded-card border border-line bg-surface shadow-card">
-      <div className="flex items-baseline justify-between gap-3 border-b border-line px-[18px] py-3">
-        <h2 id="recent-title" className="text-sm font-semibold">
-          Recent checks
-        </h2>
-        <span className="text-xs text-muted">From Mailgun · newest first</span>
-      </div>
-      <ul className="m-0 list-none divide-y divide-line p-0">
-        {shown.map((test) => (
-          <li key={test.id} className="grid gap-1.5 px-[18px] py-2.5">
-            <div className="flex items-center gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium" title={test.subject}>
-                  {test.subject}
-                </p>
-                <p className="text-xs text-muted" title={new Date(test.date * 1000).toLocaleString()}>
-                  {timeAgo(test.date)}
-                </p>
+    <section aria-labelledby="recent-title" className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
+      <h2 id="recent-title" className="text-sm font-semibold">
+        Recent checks
+      </h2>
+
+      {error && <p className="text-[13px] text-muted">{error}</p>}
+      {!tests && !error && <p className="text-[13px] text-muted">Loading…</p>}
+      {tests && !tests.length && <p className="text-[13px] text-muted">No checks yet.</p>}
+
+      {shown.length > 0 && (
+        <ul className="m-0 grid min-w-0 list-none grid-cols-[minmax(0,1fr)] gap-0.5 p-0">
+          {shown.map((test) => (
+            <li key={test.id} className="-mx-2 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1 rounded-lg px-2 py-1.5 hover:bg-surface-2">
+              <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-medium" title={test.subject}>
+                    {test.subject}
+                  </p>
+                  <p className="text-xs text-muted" title={new Date(test.date * 1000).toLocaleString()}>
+                    {timeAgo(test.date)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => open(test)}
+                  disabled={opening === test.id}
+                  aria-label={`Open results for ${test.subject}`}
+                  title="Open results in Mailgun"
+                  className="grid size-8 flex-none place-items-center rounded-lg border border-line bg-surface text-ink transition-colors hover:border-brand hover:text-brand disabled:cursor-default disabled:opacity-50"
+                >
+                  <ExternalIcon size={14} />
+                </button>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => open(test)} disabled={opening === test.id}>
-                <ExternalIcon size={13} />
-                {opening === test.id ? "Opening…" : "Results"}
-              </Button>
-            </div>
-            {rowError?.id === test.id && <p className="text-xs text-fail">{rowError.message}</p>}
-            {blockedLink?.id === test.id && (
-              <p className="text-xs text-muted">
-                Pop-up blocked.{" "}
-                <a href={blockedLink.url} target="_blank" rel="noopener" className="font-semibold text-brand underline">
-                  Open the results
-                </a>
-              </p>
-            )}
-          </li>
-        ))}
-      </ul>
-      {tests.length > SHOW_AT_FIRST && (
-        <div className="border-t border-line px-[18px] py-2.5">
-          <button
-            type="button"
-            onClick={() => setShowAll(!showAll)}
-            className="border-0 bg-transparent p-0 text-[13px] font-semibold text-brand"
-          >
-            {showAll ? "Show fewer" : `Show all ${tests.length}`}
-          </button>
-        </div>
+              {opening === test.id && <p className="text-xs text-muted">Opening…</p>}
+              {rowError?.id === test.id && <p className="text-xs text-fail">{rowError.message}</p>}
+              {blockedLink?.id === test.id && (
+                <p className="text-xs text-muted">
+                  Pop-up blocked.{" "}
+                  <a href={blockedLink.url} target="_blank" rel="noopener" className="font-semibold text-brand underline">
+                    Open the results
+                  </a>
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {tests && tests.length > SHOW_AT_FIRST && (
+        <button
+          type="button"
+          onClick={() => setShowAll(!showAll)}
+          className="justify-self-start border-0 bg-transparent p-0 text-[13px] font-semibold text-brand"
+        >
+          {showAll ? "Show fewer" : `Show all ${tests.length}`}
+        </button>
       )}
     </section>
   );

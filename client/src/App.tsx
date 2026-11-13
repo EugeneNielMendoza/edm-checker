@@ -8,6 +8,7 @@ import { StatusCard } from "./components/StatusCard";
 import { TopBar } from "./components/TopBar";
 import { useCheckRun } from "./hooks/useCheckRun";
 import { useClientLists } from "./hooks/useClientLists";
+import { useIsDesktop } from "./hooks/useIsDesktop";
 import { useTheme } from "./hooks/useTheme";
 import type { ClientList } from "./lib/api";
 import { KEYS, storage } from "./lib/storage";
@@ -22,6 +23,16 @@ export default function App() {
   const [maxUploadBytes, setMaxUploadBytes] = useState(0);
   const [editor, setEditor] = useState<{ open: boolean; list: ClientList | null }>({ open: false, list: null });
   const [dragOver, setDragOver] = useState(false);
+  const isDesktop = useIsDesktop();
+
+  // Reload "Recent checks" once a new test has been sent to Mailgun, so it appears at the top.
+  const [recentKey, setRecentKey] = useState(0);
+  const sentToMailgun = run?.steps.send.state === "done";
+  useEffect(() => {
+    if (sentToMailgun) setRecentKey((k) => k + 1);
+  }, [sentToMailgun]);
+  // In the left panel on desktop; below the main area on phones (so the drop box comes first).
+  const recentChecks = <RecentChecks refreshKey={recentKey} />;
 
   // On first load: the upload size limit, and the shared client lists.
   useEffect(() => {
@@ -112,6 +123,7 @@ export default function App() {
           onNewList={() => setEditor({ open: true, list: null })}
           onEditList={() => lists.selected && setEditor({ open: true, list: lists.selected })}
           onDeleteList={deleteList}
+          footer={isDesktop ? recentChecks : undefined}
         />
 
         <main className="flex min-w-0 flex-col px-4 py-5 md:p-8">
@@ -121,11 +133,9 @@ export default function App() {
               {run.previewHtml && <EmailPreview html={run.previewHtml} note={run.previewNote} />}
             </section>
           ) : (
-            <div className="grid flex-1 content-center justify-items-center gap-7">
-              <DropZone dragOver={dragOver} maxUploadBytes={maxUploadBytes} onFile={startCheck} />
-              <RecentChecks />
-            </div>
+            <DropZone dragOver={dragOver} maxUploadBytes={maxUploadBytes} onFile={startCheck} />
           )}
+          {!isDesktop && <div className="mt-8 border-t border-line pt-6">{recentChecks}</div>}
         </main>
       </div>
 

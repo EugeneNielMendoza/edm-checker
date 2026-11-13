@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import type { ClientList, MailgunClient } from "../lib/api";
 import { Button } from "./Button";
 import { inputClass } from "./fields";
@@ -20,6 +20,8 @@ interface SettingsPanelProps {
   onNewList: () => void;
   onEditList: () => void;
   onDeleteList: () => void;
+  /** Shown at the bottom of the panel, below a divider (e.g. recent checks). */
+  footer?: ReactNode;
 }
 
 /** Left column: subject line, Preview only switch and the email client list. */
@@ -99,6 +101,8 @@ export function SettingsPanel(props: SettingsPanelProps) {
         </div>
         <p className="text-[13px] text-muted">Lists are shared with everyone using this page.</p>
       </div>
+
+      {props.footer && <div className="border-t border-line pt-5 md:pt-6">{props.footer}</div>}
     </aside>
   );
 }

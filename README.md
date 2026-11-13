@@ -50,7 +50,7 @@ Where things are:
 | `client/src/components/DropZone.tsx` | The "drop a file" box |
 | `client/src/components/StatusCard.tsx`, `Stepper.tsx` | Progress and results of a check |
 | `client/src/components/EmailPreview.tsx` | The rendered email, with the Desktop/Mobile width switch |
-| `client/src/components/RecentChecks.tsx` | Latest Mailgun tests, with a button to reopen their results |
+| `client/src/components/RecentChecks.tsx` | Latest Mailgun tests (left panel; below the page on phones), with a button to reopen their results |
 | `client/src/components/ListEditor.tsx` | Pop-up to create/edit a client list |
 | `client/src/hooks/useCheckRun.ts` | The steps of a check: upload, wait for Mailgun, open results |
 | `client/src/hooks/useClientLists.ts` | Loading and saving the shared client lists |

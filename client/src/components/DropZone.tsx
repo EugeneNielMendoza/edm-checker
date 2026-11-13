@@ -17,7 +17,7 @@ export function DropZone({ dragOver, maxUploadBytes, onFile }: DropZoneProps) {
   const limit = maxUploadBytes ? ` · up to ${(maxUploadBytes / MB).toFixed(maxUploadBytes < 10 * MB ? 1 : 0)} MB` : "";
 
   return (
-    <section className="grid w-full justify-items-center gap-7">
+    <section className="grid flex-1 content-center justify-items-center gap-7">
       <div
         role="button"
         tabIndex={0}
