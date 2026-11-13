@@ -22,4 +22,5 @@ export const KEYS = {
   theme: "edm-theme",
   previewOnly: "edm-preview-only",
   list: "edm-list",
+  previewWidth: "edm-preview-width",
 } as const;

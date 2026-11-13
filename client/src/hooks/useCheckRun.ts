@@ -71,7 +71,7 @@ function newRun(fileName: string, summary: string): Run {
     popupBlocked: false,
     error: null,
     previewHtml: null,
-    previewNote: "Sample data · 600px wide",
+    previewNote: "Sample data",
     pageCount: 1,
     finished: false,
   };
@@ -137,7 +137,7 @@ export function useCheckRun() {
       ...r,
       pageCount,
       previewHtml: first.html,
-      previewNote: isExport ? "As exported · 600px wide" : "Sample data · 600px wide",
+      previewNote: isExport ? "As exported" : "Sample data",
       steps: { ...r.steps, render: { label: isExport ? "Exported email" : "Render", state: "done", detail: renderDetail } },
     }));
 

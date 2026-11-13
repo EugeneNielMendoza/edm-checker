@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { DropZone } from "./components/DropZone";
 import { EmailPreview } from "./components/EmailPreview";
 import { ListEditor } from "./components/ListEditor";
+import { RecentChecks } from "./components/RecentChecks";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { StatusCard } from "./components/StatusCard";
 import { TopBar } from "./components/TopBar";
@@ -120,7 +121,10 @@ export default function App() {
               {run.previewHtml && <EmailPreview html={run.previewHtml} note={run.previewNote} />}
             </section>
           ) : (
-            <DropZone dragOver={dragOver} maxUploadBytes={maxUploadBytes} onFile={startCheck} />
+            <div className="grid flex-1 content-center justify-items-center gap-7">
+              <DropZone dragOver={dragOver} maxUploadBytes={maxUploadBytes} onFile={startCheck} />
+              <RecentChecks />
+            </div>
           )}
         </main>
       </div>

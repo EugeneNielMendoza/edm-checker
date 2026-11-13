@@ -35,6 +35,12 @@ export interface CheckStatus {
   shareUrl: string | null;
 }
 
+export interface RecentTest {
+  id: string;
+  subject: string;
+  date: number; // Unix time in seconds
+}
+
 /** JSON request; throws an Error with the server's message if it fails. */
 export async function api<T>(method: string, url: string, body?: unknown): Promise<T> {
   const res = await fetch(url, {
