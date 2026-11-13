@@ -1,7 +1,7 @@
 {
   "name": "edm-checker-web",
   "private": true,
-  "description": "Upload a Sesimi EDM template zip, render it and send it to Mailgun Email Preview",
+  "description": "Upload a Sesimi EDM (template zip or export), render it and send it to Mailgun Email Preview",
   "dependencies": {
     "@faire/mjml-react": "3.4.0",
     "@myadbox/nebula-template-utils": "0.4.66",
@@ -13,9 +13,22 @@
     "zod": "3.23.8"
   },
   "scripts": {
+    "build": "tsc && vite build",
+    "dev": "vite",
+    "server": "node --env-file-if-exists=.env local-server.js",
     "start": "node local-server.js"
   },
   "engines": {
     "node": "22.x"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.31",
+    "@types/react-dom": "18.3.7",
+    "@vitejs/plugin-react": "5.2.0",
+    "autoprefixer": "10.4.21",
+    "postcss": "8.5.4",
+    "tailwindcss": "3.4.17",
+    "typescript": "5.4.5",
+    "vite": "7.3.1"
   }
 }

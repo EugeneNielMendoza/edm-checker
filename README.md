@@ -17,14 +17,47 @@ Turn on **Preview only** to render/show the email without sending it to Mailgun 
 
 Needs Node 22.13+ (or Docker) and a Mailgun API key with Email Preview access.
 
+Put your settings in a `.env` file (ignored by git), e.g. `MAILGUN_API_KEY=your-key`, then:
+
 ```
 npm install
-MAILGUN_API_KEY=your-key APP_PASSWORD=choose-one npm start
+npm run build     # builds the page into dist/
+npm run server    # starts the app with the settings from .env
 ```
 
 Then open http://localhost:3000.
 
-Or keep settings in a `.env` file (ignored by git) and run `node --env-file=.env local-server.js`.
+## Working on the page
+
+The page is React + Tailwind CSS (TypeScript, built with Vite), in `client/`. The server
+(`lib/app.js`) doesn't change when you edit the page.
+
+To see changes instantly while editing, run both of these (two terminals) and open
+http://localhost:5173:
+
+```
+npm run server    # the API, on port 3000
+npm run dev       # the page with hot reload; it sends /api requests to port 3000
+```
+
+Where things are:
+
+| File | What it is |
+|---|---|
+| `client/src/App.tsx` | The page layout; connects everything below |
+| `client/src/components/TopBar.tsx` | Top bar with the light/dark toggle |
+| `client/src/components/SettingsPanel.tsx` | Left column: subject, Preview only, client list |
+| `client/src/components/DropZone.tsx` | The "drop a file" box |
+| `client/src/components/StatusCard.tsx`, `Stepper.tsx` | Progress and results of a check |
+| `client/src/components/EmailPreview.tsx` | The rendered email |
+| `client/src/components/ListEditor.tsx` | Pop-up to create/edit a client list |
+| `client/src/hooks/useCheckRun.ts` | The steps of a check: upload, wait for Mailgun, open results |
+| `client/src/hooks/useClientLists.ts` | Loading and saving the shared client lists |
+| `client/src/lib/api.ts` | Requests to the server |
+| `client/src/index.css`, `tailwind.config.js` | Sesimi colours for light and dark mode |
+
+The built page is `dist/app.html` (not `index.html`) on purpose: on Vercel, `dist/` is served
+as static files, and an `index.html` there would be shown without the password check.
 
 With Docker:
 
@@ -35,11 +68,12 @@ docker run -p 3000:3000 -v edm-data:/app/data -e MAILGUN_API_KEY=your-key -e APP
 
 ## Deploy on Vercel
 
-The same code (`lib/app.js`) runs on Vercel via `api/index.mjs` + `vercel.json`; `local-server.js` is only for
+The same server code (`lib/app.js`) runs on Vercel via `api/index.mjs` + `vercel.json`; `local-server.js` is only for
 local/Docker. Don't add `app.js`, `index.js` or `server.js` at the project root: Vercel auto-detects those
 names as the server entry and ignores `api/`.
 
-1. Import the GitHub repo in Vercel (Framework preset: **Other**, no build command).
+1. Import the GitHub repo in Vercel (Framework preset: **Other**). `vercel.json` sets the build
+   command (`npm run build`) and output folder (`dist`), so leave those empty in the dashboard.
 2. **Storage → Create → Blob**, choose **Private** access, and connect it to the project.
    Vercel then sets `BLOB_READ_WRITE_TOKEN`, and client lists are saved there.
 3. **Settings → Environment Variables**: add `MAILGUN_API_KEY` (mark it Sensitive),

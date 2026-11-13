@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------- Sesimi theme colours ----------
+   Brand colours (from the Sesimi style guide):
+     midnight teal #002a2e · cyan #7af1ff · soft pink #f9cade · electric lime #d1ff3b
+     flash purple #544ae5 · blood orange #f74c07 · white · black
+   Light mode: white surfaces, teal ink and buttons. Dark mode: deep teal surfaces, lime buttons.
+   Tailwind classes such as `bg-surface` or `text-brand` read these (see tailwind.config.js). */
+:root {
+  --brand: #002a2e;
+  --brand-strong: #00454b;
+  --brand-ink: #ffffff;
+  --brand-soft: color-mix(in srgb, #002a2e 8%, transparent);
+  --bg: #f2f6f6;
+  --surface: #ffffff;
+  --surface-2: #eaf1f1;
+  --ink: #002a2e;
+  --muted: #4c6a6d;
+  --line: #d6e2e3;
+  --topbar: #002a2e;
+  --done: #002a2e;
+  --done-ink: #d1ff3b;
+  --pass: #0d6b4f;
+  --fail: #c93d00;
+  --warn: #c93d00;
+  --chip-run-bg: color-mix(in srgb, #7af1ff 45%, transparent);
+  --chip-run-ink: #002a2e;
+  --chip-done-bg: #d1ff3b;
+  --chip-done-ink: #002a2e;
+  --shadow: 0 1px 2px rgba(0, 42, 46, .06), 0 10px 30px -14px rgba(0, 42, 46, .25);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --brand: #d1ff3b;
+  --brand-strong: #e2ff7a;
+  --brand-ink: #002a2e;
+  --brand-soft: color-mix(in srgb, #d1ff3b 14%, transparent);
+  --bg: #060f11;
+  --surface: #0c1a1d;
+  --surface-2: #122427;
+  --ink: #ffffff;
+  --muted: #94adb0;
+  --line: #1c3236;
+  --topbar: #0a1719;
+  --done: #d1ff3b;
+  --done-ink: #002a2e;
+  --pass: #d1ff3b;
+  --fail: #ff7a45;
+  --warn: #ff7a45;
+  --chip-run-bg: color-mix(in srgb, #7af1ff 18%, transparent);
+  --chip-run-ink: #7af1ff;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 14px 34px -16px rgba(0, 0, 0, .7);
+  color-scheme: dark;
+}
+
+/* Tints mixed from the colours above (they follow the theme automatically). */
+:root {
+  --fail-soft: color-mix(in srgb, var(--fail) 10%, transparent);
+  --fail-line: color-mix(in srgb, var(--fail) 30%, transparent);
+  --warn-soft: color-mix(in srgb, var(--warn) 14%, transparent);
+}
+
+@layer base {
+  body {
+    @apply bg-bg font-sans text-[15px] leading-normal text-ink antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+  dialog::backdrop {
+    background: rgba(10, 14, 22, .5);
+    backdrop-filter: blur(2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-soft {
+    animation: none !important;
+  }
+}
